@@ -32,8 +32,7 @@ jobs:
           sudo apt-get install -y \
             build-essential git zip unzip autoconf libtool pkg-config \
             zlib1g-dev libncurses-dev cmake libffi-dev libssl-dev libsqlite3-dev \
-            libltdl-dev libgstreamer1.0-dev gstreamer1.0-plugins-base \
-            libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev \
+            libltdl-dev libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev \
             libportmidi-dev
 
       - name: Install Buildozer and dependencies
