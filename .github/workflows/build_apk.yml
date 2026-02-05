@@ -20,7 +20,7 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Set up SDK
+      - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
@@ -30,22 +30,41 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y \
-            git zip unzip autoconf libtool pkg-config \
-            zlib1g-dev libncurses-dev cmake libffi-dev libssl-dev libsqlite3-dev
+            build-essential git zip unzip autoconf libtool pkg-config \
+            zlib1g-dev libncurses-dev cmake libffi-dev libssl-dev libsqlite3-dev \
+            libltdl-dev libgstreamer1.0-dev gstreamer1.0-plugins-base \
+            libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev \
+            libportmidi-dev
 
-      - name: Install Buildozer
+      - name: Install Buildozer and dependencies
         run: |
-          pip install --upgrade pip
-          pip install --upgrade buildozer cython
+          pip install --upgrade pip wheel setuptools
+          pip install --upgrade buildozer cython virtualenv
 
-      - name: Build with Buildozer
+      - name: Build APK
         working-directory: Android_Kivy
+        env:
+          # 使用 GitHub Runner 预装的 Android SDK
+          ANDROIDSDK: /usr/local/lib/android/sdk
+          ANDROIDNDK: /usr/local/lib/android/sdk/ndk/25.2.9519653
+          ANDROIDAPI: "33"
+          ANDROIDMINAPI: "21"
         run: |
-          # 接受 license 并开始构建
-          buildozer android debug
+          # 清理之前的构建
+          rm -rf .buildozer
+          # 开始构建
+          buildozer -v android debug 2>&1 | tee build.log
 
-      - name: Upload artifacts
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: package
+          name: koreaderremote-apk
           path: Android_Kivy/bin/*.apk
+          if-no-files-found: error
+
+      - name: Upload Build Log (if failed)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log
+          path: Android_Kivy/build.log
