@@ -5,8 +5,6 @@ import threading
 import json
 import os
 import sys
-import sys
-import shutil
 from datetime import datetime
 
 def resource_path(relative_path):
@@ -74,7 +72,6 @@ class KOReaderRemoteApp:
         self.ip_var = tk.StringVar()
         self.current_theme = "light"
         self.always_on_top = False  # 置顶状态
-        self.rotation_state = 0 # 0: Portrait, 1: Landscape
         self.config = {}
         
         # 加载配置（在设置窗口大小之前）
@@ -136,36 +133,11 @@ class KOReaderRemoteApp:
         self.btn_theme.pack(side=tk.RIGHT, fill=tk.Y)
         
         # 图钉按钮 (置顶功能，在主题按钮左侧)
-        self.btn_pin = tk.Button(self.title_bar, text="📌", font=("Segoe UI Symbol", 10),
+        self.btn_pin = tk.Button(self.title_bar, text="📌", font=("Arial", 12),
                                  relief=tk.FLAT, bd=0, cursor="hand2", width=4,
                                  activebackground=None,
                                  command=self.toggle_always_on_top)
-        self.btn_pin.pack(side=tk.RIGHT, fill=tk.Y, padx=1)
-
-        # === 新增功能按钮 (最左侧) ===
-        # 字体选用 Segoe UI Symbol 或其他通用字体以更好显示特殊符号
-        btn_font = ("Segoe UI Symbol", 11)
-        
-        # 旋转屏幕 (Rotate) - 状态切换
-        self.btn_rotate = tk.Button(self.title_bar, text="⟳", font=btn_font,
-                                    relief=tk.FLAT, bd=0, cursor="hand2", width=4,
-                                    activebackground=None,
-                                    command=self.rotate_device)
-        self.btn_rotate.pack(side=tk.LEFT, fill=tk.Y, padx=1)
-
-        # 刷新屏幕 (Full Refresh)
-        self.btn_refresh = tk.Button(self.title_bar, text="⚡", font=btn_font,
-                                     relief=tk.FLAT, bd=0, cursor="hand2", width=4,
-                                     activebackground=None,
-                                     command=self.full_refresh)
-        self.btn_refresh.pack(side=tk.LEFT, fill=tk.Y, padx=1)
-
-        # 截图 (Screenshot)
-        self.btn_screenshot = tk.Button(self.title_bar, text="📷", font=btn_font,
-                                        relief=tk.FLAT, bd=0, cursor="hand2", width=4,
-                                        activebackground=None,
-                                        command=self.take_screenshot)
-        self.btn_screenshot.pack(side=tk.LEFT, fill=tk.Y, padx=1)
+        self.btn_pin.pack(side=tk.RIGHT, fill=tk.Y)
 
         # === 2. 底部状态栏 ===
         self.status_bar = tk.Frame(self.root, height=25)
@@ -266,11 +238,6 @@ class KOReaderRemoteApp:
         pin_color = t['btn_primary'] if self.always_on_top else t['theme_icon_color']
         self.btn_pin.configure(bg=t['panel_bg'], fg=pin_color,
                                activebackground=t['panel_bg'], activeforeground=pin_color)
-        
-        # 5. 新增功能按钮主题
-        for btn in [self.btn_rotate, self.btn_refresh, self.btn_screenshot]:
-            btn.configure(bg=t['panel_bg'], fg=t['theme_icon_color'],
-                          activebackground=t['panel_bg'], activeforeground=t['theme_icon_color'])
         
         # 4. 登录页
         self.page_login.winfo_children()[0].configure(bg=t['window_bg'], fg=t['fg_primary'])
@@ -399,83 +366,6 @@ class KOReaderRemoteApp:
     def previous_page(self): self.send_cmd("/koreader/event/GotoViewRel/-1", "上一页")
     def next_page(self): self.send_cmd("/koreader/event/GotoViewRel/1", "下一页")
     def suspend_device(self): self.send_cmd("/koreader/event/RequestSuspend", "已发送休眠")
-    
-    # === 新增功能 ===
-    # === 新增功能 ===
-    def rotate_device(self):
-        # 切换旋转状态: 0 -> 1 -> 0
-        new_state = 1 if self.rotation_state == 0 else 0
-        cmd = f"/koreader/event/SetRotationMode/{new_state}"
-        self.send_cmd(cmd, "旋转中...")
-        self.rotation_state = new_state
-
-    def full_refresh(self):
-        # 尝试发送全刷命令
-        self.send_cmd("/koreader/event/FullRefresh", "请求刷新")
-
-    def take_screenshot(self):
-        if not self.connected: 
-            messagebox.showwarning("提示", "请先连接设备")
-            return
-            
-        ip = self.ip_var.get().strip()
-        url = f"http://{ip}:8080/koreader/device/screen/bb"
-        
-        def _shot():
-            try:
-                self.root.after(0, lambda: self.show_log("正在截图(等待渲染)..."))
-                
-                # 设置请求头，模拟浏览器
-                headers = {
-                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
-                }
-
-                # 重试机制 (最多3次)
-                session = requests.Session()
-                adapter = requests.adapters.HTTPAdapter(max_retries=3)
-                session.mount('http://', adapter)
-                
-                # 增加超时时间到90秒，因为墨水屏渲染可能很慢
-                # Stream下载以避免 IncompleteRead
-                with session.get(url, headers=headers, stream=True, timeout=1000) as resp:
-                    resp.raise_for_status()
-                    
-                    # 生成文件名
-                    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                    filename = f"screenshot_{timestamp}.png"
-                    
-                    if getattr(sys, 'frozen', False):
-                        base_dir = os.path.dirname(sys.executable)
-                    else:
-                        base_dir = os.getcwd()
-                    
-                    screenshots_dir = os.path.join(base_dir, "screenshots")
-                    os.makedirs(screenshots_dir, exist_ok=True)
-                        
-                    filepath = os.path.join(screenshots_dir, filename)
-
-                    # 使用 iter_content 分块写入，更稳健
-                    with open(filepath, "wb") as f:
-                        for chunk in resp.iter_content(chunk_size=8192):
-                            if chunk:
-                                f.write(chunk)
-                    
-                    self.root.after(0, lambda: self.show_log(f"已保存: screenshots/{filename}"))
-
-            except requests.exceptions.ChunkedEncodingError:
-                self.root.after(0, lambda: self.show_log(f"截图失败: 数据流中断", True))
-                self.root.after(0, lambda: messagebox.showerror("截图失败", "数据传输中断(IncompleteRead)。\n可能是设备生成图片太慢或网络不稳定，请重试。"))
-            except Exception as e:
-                err_msg = str(e)
-                if "IncompleteRead" in err_msg:
-                    err_msg = "传输中断，请重试"
-                elif "timed out" in err_msg:
-                    err_msg = "请求超时(设备响应太慢)"
-                
-                self.root.after(0, lambda: self.show_log(f"截图失败", True))
-                self.root.after(0, lambda: messagebox.showerror("截图失败", f"无法获取截图:\n{err_msg}"))
-
-        threading.Thread(target=_shot, daemon=True).start()
 
     def on_mouse_wheel(self, event):
         if not self.connected: return

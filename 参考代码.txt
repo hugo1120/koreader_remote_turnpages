@@ -1,0 +1,1560 @@
+/koreader/ui/
+  ReaderUI instance
+   covers_fullscreen: true
+   disable_double_tap: true
+J  1                                ReaderView
+J  2                                ReaderLink
+J  3                                ReaderHighlight
+J  4                                ReaderMenu
+J  5                                ReaderHandMade
+J  6                                ReaderToc
+J  7                                ReaderBookmark
+J  8                                ReaderAnnotation
+J  9                                ReaderGoto
+J  10                               LanguageSupport
+J  11                               ReaderDictionary
+J  12                               ReaderWikipedia
+J  13                               Screenshoter
+J  14                               ReaderDeviceStatus
+J  15                               ReaderConfig
+J  16                               ReaderKoptListener
+J  17                               ReaderCropping
+J  18                               ReaderPaging
+J  19                               ReaderZooming
+J  20                               ReaderPanning
+J  21                               ReaderHinting
+J  22                               ReaderScrolling
+J  23                               ReaderBack
+J  24                               ReaderSearch
+J  25                               ReaderStatus
+J  26                               ReaderThumbnail
+J  27                               FileSearcher
+J  28                               FileManagerShortcuts
+J  29                               FileManagerHistory
+J  30                               FileManagerCollection
+J  31                               BookInfo
+J  32                               DeviceListener
+J  33                               NetworkListener
+J  34                               ArchiveViewer
+J  35                               AutoDim
+J  36                               AutoSuspend
+J  37                               AutoTurn
+J  38                               AutoWarmth
+J  39                               BatteryStatWidget
+J  40                               BookShortcuts
+J  41                               Calibre
+J  42 
+J  43                               CoverBrowser
+J  44                               DocSettingTweak
+J  45                               FilebrowserPlus
+J  46                               Gestures
+J  47                               HttpInspector
+J  48                               Japanese
+J  49                               KeepAlive
+J  50                               MoveToArchive
+J  51                               OPDS
+J  52                               PerceptionExpander
+J  53                               Profiles
+J  54                               ReadTimer
+J  55                               ReaderStatistics
+J  56                               SystemStatWidget
+J  57                               Terminal
+J  58                               TextEditor
+J  59                               TimeSync
+J  60                               VocabBuilder
+J  _ordered_touch_zones 
+J  _zones 
+J  active_widgets 
+J  annotation                       ReaderAnnotation
+J  archiveviewer                    ArchiveViewer
+J  autodim                          AutoDim
+J  autosuspend                      AutoSuspend
+J  autoturn                         AutoTurn
+J  autowarmth                       AutoWarmth
+J  back                             ReaderBack
+J  batterystat                      BatteryStatWidget
+J  bookinfo                         BookInfo
+J  bookmark                         ReaderBookmark
+J  bookshortcuts                    BookShortcuts
+J  calibre                          Calibre
+J  collections                      FileManagerCollection
+J  comcireader 
+J  config                           ReaderConfig
+J  coverbrowser                     CoverBrowser
+J  cropping                         ReaderCropping
+J  devicelistener                   DeviceListener
+J  devicestatus                     ReaderDeviceStatus
+J  dialog                           ReaderUI
+J  dictionary                       ReaderDictionary
+J  dimen                            Geom
+J  doc_props 
+J  doc_settings 
+J  docsettingtweak                  DocSettingTweak
+J  document                         PdfDocument
+J  filebrowserplus                  FilebrowserPlus
+J  filesearcher                     FileSearcher
+J  folder_shortcuts                 FileManagerShortcuts
+J  ges_events 
+J  gestures                         Gestures
+J  gotopage                         ReaderGoto
+J  handmade                         ReaderHandMade
+J  highlight                        ReaderHighlight
+J  hinting                          ReaderHinting
+J  history                          FileManagerHistory
+J  httpinspector                    HttpInspector
+J  japanese                         Japanese
+J  keepalive                        KeepAlive
+J  key_events 
+J  koptlistener                     ReaderKoptListener
+J  languagesupport                  LanguageSupport
+J  link                             ReaderLink
+J  menu                             ReaderMenu
+J  movetoarchive                    MoveToArchive
+J  networklistener                  NetworkListener
+J  opds                             OPDS
+J  paging                           ReaderPaging
+J  panning                          ReaderPanning
+J  perceptionexpander               PerceptionExpander
+J  profiles                         Profiles
+J  readtimer                        ReadTimer
+J  screenshot                       Screenshoter
+J  scrolling                        ReaderScrolling
+J  search                           ReaderSearch
+J  statistics                       ReaderStatistics
+J  status                           ReaderStatus
+J  systemstat                       SystemStatWidget
+J  terminal                         Terminal
+J  texteditor                       TextEditor
+J  thumbnail                        ReaderThumbnail
+J  timesync                         TimeSync
+J  toc                              ReaderToc
+J  touch_zone_dg                    DepGraph
+J  view                             ReaderView
+J  vocabbuilder                     VocabBuilder
+J  wikipedia                        ReaderWikipedia
+J  zooming                          ReaderZooming
+  ReaderUI
+   name: ReaderUI
+J  instance                         ReaderUI
+   closeDialog()                    M 0 function ReaderUI:closeDialog()
+   closeDocument()                  M 0 function ReaderUI:closeDocument()
+   dealWithLoadDocumentFailure()    M 0 function ReaderUI:dealWithLoadDocumentFailure()
+   doShowReader()                   M 3 function ReaderUI:doShowReader(file, provider, seamless)
+   extendProvider()                 M 3 function ReaderUI:extendProvider(file, provider, is_provider_forced)
+   getCurrentPage()                 M 0 function ReaderUI:getCurrentPage()
+   getLastDirFile()                 M 1 function ReaderUI:getLastDirFile(to_file_browser)
+   init()                           M 0 function ReaderUI:init()
+   onClose()                        M 1 function ReaderUI:onClose(full_refresh)
+   onCloseWidget()                  M 0 function ReaderUI:onCloseWidget()
+   onFlushSettings()                M 1 function ReaderUI:onFlushSettings(show_notification)
+   onHome()                         M 0 function ReaderUI:onHome()
+   onOpenLastDoc()                  M 0 function ReaderUI:onOpenLastDoc()
+   onPhysicalKeyboardConnected()    M 0 function ReaderUI:registerKeyEvents()
+   onReload()                       M 0 function ReaderUI:onReload()
+   onScreenResize()                 M 1 function ReaderUI:onScreenResize(dimen)
+   onSetupShowReader()              M 0 function ReaderUI:onSetupShowReader()
+   onShowingReader()                M 0 function ReaderUI:onShowingReader()
+   onVerifyPassword()               M 1 function ReaderUI:onVerifyPassword(document)
+   registerKeyEvents()              M 0 function ReaderUI:registerKeyEvents()
+   registerModule()                 M 3 function ReaderUI:registerModule(name, ui_module, always_active)
+   registerPostInitCallback()       M 1 function ReaderUI:registerPostInitCallback(callback)
+   registerPostReaderReadyCallback() M 1 function ReaderUI:registerPostReaderReadyCallback(callback)
+   reloadDocument()                 M 3 function ReaderUI:reloadDocument(after_close_callback, seamless, after_open_callback)
+   saveSettings()                   M 0 function ReaderUI:saveSettings()
+   setLastDirForFileBrowser()       M 1 function ReaderUI:setLastDirForFileBrowser(dir)
+   showFileManager()                M 2 function ReaderUI:showFileManager(file, selected_files)
+   showReader()                     M 4 function ReaderUI:showReader(file, provider, seamless, is_provider_forced)
+   showReaderCoroutine()            M 3 function ReaderUI:showReaderCoroutine(file, provider, seamless)
+   switchDocument()                 M 3 function ReaderUI:switchDocument(new_file, seamless, after_open_callback)
+   unlockDocumentWithPassword()     M 2 function ReaderUI:unlockDocumentWithPassword(document, try_again)
+  InputContainer
+   vertical_align: top
+   _init()                          M 0 function InputContainer:_init()
+   _isGestureAlwaysActive()         M 2 function InputContainer:_isGestureAlwaysActive(ges, multiswipe_directions)
+   _onGestureFiltered()             M 1 function InputContainer:_onGestureFiltered(ev)
+   checkRegisterTouchZone()         M 1 function InputContainer:checkRegisterTouchZone(id)
+   closeInputDialog()               M 0 function InputContainer:closeInputDialog()
+   isGestureAlwaysActive()          f 4 InputContainer.isGestureAlwaysActive = function(this, ges, multiswipe_directions) return self:isGestureAlwaysActive(ges, multiswipe_directions) end
+   onGesture()                      M 1 function InputContainer:onGesture(ev)
+   onIgnoreTouchInput()             M 1 function InputContainer:onIgnoreTouchInput(toggle)
+   onInput()                        M 2 function InputContainer:onInput(input, ignore_first_hold_release)
+   onKeyPress()                     M 1 function InputContainer:onKeyPress(key)
+   onKeyRepeat()                    M 1 function InputContainer:onKeyRepeat(key)
+   onPhysicalKeyboardDisconnected() M 0 function InputContainer:onPhysicalKeyboardDisconnected()
+   paintTo()                        M 3 function InputContainer:paintTo(bb, x, y)
+   registerTouchZones()             M 1 function InputContainer:registerTouchZones(zones)
+   setIgnoreTouchInput()            M 1 function InputContainer:setIgnoreTouchInput(state)
+   unRegisterTouchZones()           M 1 function InputContainer:unRegisterTouchZones(zones)
+   updateTouchZonesOnScreenResize() M 1 function InputContainer:updateTouchZonesOnScreenResize(new_screen_dimen)
+  WidgetContainer
+   clear()                          M 1 function WidgetContainer:clear(skip_free)
+   free()                           M 1 function WidgetContainer:free(full)
+   getSize()                        M 0 function WidgetContainer:getSize()
+   handleEvent()                    M 1 function WidgetContainer:handleEvent(event)
+   paintTo()                        M 3 function WidgetContainer:paintTo(bb, x, y)
+   propagateEvent()                 M 1 function WidgetContainer:propagateEvent(event)
+  Widget
+   extend()                         M 1 function Widget:extend(subclass_prototype)
+   getSize()                        M 0 function Widget:getSize()
+   new()                            M 1 function Widget:new(o)
+   paintTo()                        M 3 function Widget:paintTo(bb, x, y)
+  EventListener
+   extend()                         M 1 function EventListener:extend(subclass_prototype)
+   handleEvent()                    M 1 function EventListener:handleEvent(event)
+   new()                            M 1 function EventListener:new(o)
+   
+/koreader/device/
+  Kobo instance
+   cpu_count: 1
+   cpu_governor_knob: /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
+   default_cpu_governor: interactive
+   display_dpi: 300
+   has_wakeup_count: true
+   is_cover_closed: false
+   key_repeat: cdata
+   last_suspend_time: 43197894
+   model: Kobo_daylight
+   ntx_fd: 4
+   ntx_lit_sysfs_knob: /sys/devices/platform/pmic_light.1/lit
+   orig_hw_nightmode: false
+   screen_saver_lock: false
+   screen_saver_mode: false
+   total_suspend_time: 2566603898
+   touch_phoenix_protocol: true
+   unexpected_wakeup_count: 0
+J  frontlight_settings              SysfsLight
+J  input                            Input
+J  powerd                           KoboPowerD
+J  screen                           self.screen.getSize = function()
+J  wakeup_mgr                       WakeupMgr
+   _updateChargingLED()             f * local debounced_action_wrapper = function(...)
+   canStandby()                     f 0 local function yes() return true end
+   charging_led_imp()               M 1 function Kobo:_NTXChargingLEDToggle(toggle)
+   disableKeyRepeat()               f 0 local function NOP() return end
+   enableCPUCores()                 f 0 local function NOP() return end
+   hasFrontlight()                  f 0 local function yes() return true end
+   hasNaturalLight()                f 0 local function yes() return true end
+   restoreKeyRepeat()               f 0 local function NOP() return end
+   setupChargingLED()               f 0 local function NOP() return end
+   toggleChargingLED()              f 0 local function NOP() return end
+   toggleKeyRepeat()                f 0 local function NOP() return end
+  Kobo
+   automagic_sysfs: false
+   battery_sysfs: /sys/class/power_supply/mc13892_bat
+   home_dir: /mnt/onboard
+   model: Kobo
+   ntx_dev: /dev/input/event0
+   ota_model: kobo
+   standby_state: standby
+   touch_dev: /dev/input/event1
+   touch_mirrored_x: true
+   touch_mirrored_y: false
+   touch_switch_xy: true
+   unexpected_wakeup_count: 0
+   UIManagerReady()                 M 1 function Kobo:UIManagerReady(uimgr)
+   _LinuxChargingLEDToggle()        M 1 function Kobo:_LinuxChargingLEDToggle(toggle)
+   _NTXChargingLEDToggle()          M 1 function Kobo:_NTXChargingLEDToggle(toggle)
+   _doSuspend()                     M 0 function Kobo:_doSuspend()
+   canHWInvert()                    f 0 local function yes() return true end
+   canPowerOff()                    f 0 local function yes() return true end
+   canReboot()                      f 0 local function yes() return true end
+   canStandby()                     f 0 local function no() return false end
+   canSuspend()                     f 0 local function yes() return true end
+   canToggleMassStorage()           f 0 local function yes() return true end
+   checkUnexpectedWakeup()          M 0 function Kobo:checkUnexpectedWakeup()
+   defaultCPUGovernor()             M 0 function Kobo:defaultCPUGovernor()
+   disableKeyRepeat()               M 0 function Kobo:disableKeyRepeat()
+   enableCPUCores()                 M 1 function Kobo:enableCPUCores(amount)
+   exit()                           M 0 function Kobo:exit()
+   getCPUCount()                    M 0 function Kobo:getCPUCount()
+   getFirmwareVersion()             M 0 function Kobo:getFirmwareVersion()
+   getKeyRepeat()                   M 0 function Kobo:getKeyRepeat()
+   hasEclipseWfm()                  f 0 local function no() return false end
+   hasFastWifiStatusQuery()         f 0 local function yes() return true end
+   hasMultitouch()                  f 0 local function yes() return true end
+   hasNaturalLight()                f 0 local function no() return false end
+   hasNaturalLightMixer()           f 0 local function no() return false end
+   hasOTAUpdates()                  f 0 local function yes() return true end
+   hasReliableMxcWaitFor()          f 0 local function yes() return true end
+   hasWifiManager()                 f 0 local function yes() return true end
+   hasWifiRestore()                 f 0 local function yes() return true end
+   init()                           M 0 function Kobo:init()
+   initEventAdjustHooks()           M 0 function Kobo:initEventAdjustHooks()
+   initNetworkManager()             M 1 function Kobo:initNetworkManager(NetworkMgr)
+   isAlwaysPortrait()               f 0 local function yes() return true end
+   isKobo()                         f 0 local function yes() return true end
+   isMTK()                          f 0 local function no() return false end
+   isMk7()                          f 0 local function no() return false end
+   isREAGL()                        f 0 local function no() return false end
+   isSMP()                          f 0 local function no() return false end
+   isStartupScriptUpToDate()        M 0 function Kobo:isStartupScriptUpToDate()
+   isSunxi()                        f 0 local function no() return false end
+   isTouchDevice()                  f 0 local function yes() return true end
+   needsScreenRefreshAfterResume()  f 0 local function no() return false end
+   performanceCPUGovernor()         M 0 function Kobo:performanceCPUGovernor()
+   powerOff()                       M 0 function Kobo:powerOff()
+   reboot()                         M 0 function Kobo:reboot()
+   rescheduleSuspend()              M 0 function Kobo:rescheduleSuspend()
+   restoreKeyRepeat()               M 0 function Kobo:restoreKeyRepeat()
+   resume()                         M 0 function Kobo:resume()
+   saveSettings()                   M 0 function Kobo:saveSettings()
+   scheduleUnexpectedWakeupGuard()  M 0 function Kobo:scheduleUnexpectedWakeupGuard()
+   setDateTime()                    M 6 function Kobo:setDateTime(year, month, day, hour, min, sec)
+   setEventHandlers()               M 1 function Kobo:setEventHandlers(uimgr)
+   setTouchEventHandler()           M 0 function Kobo:setTouchEventHandler()
+   setupChargingLED()               M 0 function Kobo:setupChargingLED()
+   standby()                        M 1 function Kobo:standby(max_duration)
+   supportsScreensaver()            f 0 local function yes() return true end
+   suspend()                        M 0 function Kobo:suspend()
+   toggleChargingLED()              M 1 function Kobo:toggleChargingLED(toggle)
+   toggleKeyRepeat()                M 1 function Kobo:toggleKeyRepeat(toggle)
+   usbPlugOut()                     M 0 function Kobo:usbPlugOut()
+  Device
+   is_cover_closed: false
+   last_standby_time: 0
+   last_suspend_time: 0
+   screen_saver_lock: false
+   screen_saver_mode: false
+   suspend_wait_timeout: 15
+   total_standby_time: 0
+   total_suspend_time: 0
+   UIManagerReady()                 M 1 function Device:UIManagerReady(uimgr) end
+   _UIManagerReady()                M 1 function Device:_UIManagerReady(uimgr)
+   _afterNotCharging()              M 0 function Device:_afterNotCharging()
+   _afterResume()                   M 1 function Device:_afterResume(inhibit)
+   _beforeCharging()                M 0 function Device:_beforeCharging()
+   _beforeSuspend()                 M 1 function Device:_beforeSuspend(inhibit)
+   _setEventHandlers()              M 1 function Device:_setEventHandlers(uimgr)
+   ambientBrightnessLevel()         M 0 function Device:ambientBrightnessLevel()
+   associateFileExtensions()        M 1 function Device:associateFileExtensions(exts)
+   canAssociateFileExtensions()     f 0 local function no() return false end
+   canDoSwipeAnimation()            f 0 local function no() return false end
+   canExecuteScript()               M 1 function Device:canExecuteScript(file)
+   canExternalDictLookup()          f 0 local function no() return false end
+   canHWDither()                    f 0 local function no() return false end
+   canHWInvert()                    f 0 local function no() return false end
+   canImportFiles()                 f 0 local function no() return false end
+   canKeyRepeat()                   f 0 local function no() return false end
+   canModifyFBInfo()                f 0 local function no() return false end
+   canOpenLink()                    f 0 local function no() return false end
+   canPowerOff()                    f 0 local function no() return false end
+   canPowerSaveWhileCharging()      f 0 local function no() return false end
+   canReboot()                      f 0 local function no() return false end
+   canRestart()                     f 0 local function yes() return true end
+   canShareText()                   f 0 local function no() return false end
+   canStandby()                     f 0 local function no() return false end
+   canSuspend()                     f 0 local function no() return false end
+   canToggleChargingLED()           f 0 local function no() return false end
+   canToggleMassStorage()           f 0 local function no() return false end
+   canUseCBB()                      f 0 local function yes() return true end
+   canUseWAL()                      f 0 local function yes() return true end
+   disableKeyRepeat()               M 0 function Device:disableKeyRepeat() end
+   enableCPUCores()                 M 1 function Device:enableCPUCores(amount) end
+   exit()                           M 0 function Device:exit()
+   extend()                         M 1 function Device:extend(o)
+   getDefaultCoverPath()            M 0 function Device:getDefaultCoverPath()
+   getDefaultRoute()                M 1 function Device:getDefaultRoute(interface)
+   getDeviceScreenDPI()             M 0 function Device:getDeviceScreenDPI()
+   getKeyRepeat()                   M 0 function Device:getKeyRepeat() end
+   getPowerDevice()                 M 0 function Device:getPowerDevice()
+   hasAuxBattery()                  f 0 local function no() return false end
+   hasBGRFrameBuffer()              f 0 local function no() return false end
+   hasBattery()                     f 0 local function yes() return true end
+   hasClipboard()                   f 0 local function yes() return true end
+   hasColorScreen()                 f 0 local function no() return false end
+   hasDPad()                        f 0 local function no() return false end
+   hasEinkScreen()                  f 0 local function yes() return true end
+   hasExitOptions()                 f 0 local function yes() return true end
+   hasExternalSD()                  f 0 local function no() return false end
+   hasFastWifiStatusQuery()         f 0 local function no() return false end
+   hasFewKeys()                     f 0 local function no() return false end
+   hasFrontlight()                  f 0 local function no() return false end
+   hasGSensor()                     f 0 local function no() return false end
+   hasKaleidoWfm()                  f 0 local function no() return false end
+   hasKeyboard()                    f 0 local function no() return false end
+   hasKeys()                        f 0 local function no() return false end
+   hasNaturalLight()                f 0 local function no() return false end
+   hasNaturalLightApi()             f 0 local function no() return false end
+   hasNaturalLightMixer()           f 0 local function no() return false end
+   hasOTARunning()                  f 0 local function no() return false end
+   hasOTAUpdates()                  f 0 local function no() return false end
+   hasScreenKB()                    f 0 local function no() return false end
+   hasSeamlessWifiToggle()          f 0 local function yes() return true end
+   hasSymKey()                      f 0 local function no() return false end
+   hasSystemFonts()                 f 0 local function no() return false end
+   hasWifiManager()                 f 0 local function no() return false end
+   hasWifiRestore()                 f 0 local function no() return false end
+   hasWifiToggle()                  f 0 local function yes() return true end
+   info()                           M 0 function Device:info()
+   init()                           M 0 function Device:init()
+   initNetworkManager()             M 0 function Device:initNetworkManager() end
+   install()                        M 0 function Device:install()
+   invertButtons()                  M 0 function Device:invertButtons()
+   invertButtonsLeft()              M 0 function Device:invertButtonsLeft()
+   invertButtonsRight()             M 0 function Device:invertButtonsRight()
+   isAlwaysFullscreen()             M 0 function Device:isAlwaysFullscreen() return true end
+   isAlwaysPortrait()               f 0 local function no() return false end
+   isAndroid()                      f 0 local function no() return false end
+   isCervantes()                    f 0 local function no() return false end
+   isDefaultFullscreen()            f 0 local function yes() return true end
+   isDeprecated()                   f 0 local function no() return false end
+   isDesktop()                      f 0 local function no() return false end
+   isEmulator()                     f 0 local function no() return false end
+   isGSensorLocked()                f 0 local function no() return false end
+   isHapticFeedbackEnabled()        f 0 local function no() return false end
+   isKindle()                       f 0 local function no() return false end
+   isKobo()                         f 0 local function no() return false end
+   isPocketBook()                   f 0 local function no() return false end
+   isRemarkable()                   f 0 local function no() return false end
+   isSDL()                          f 0 local function no() return false end
+   isSonyPRSTUX()                   f 0 local function no() return false end
+   isStartupScriptUpToDate()        M 0 function Device:isStartupScriptUpToDate()
+   isTouchDevice()                  f 0 local function no() return false end
+   isValidPath()                    M 1 function Device:isValidPath(path)
+   lockGSensor()                    M 1 function Device:lockGSensor(toggle)
+   needsScreenRefreshAfterResume()  f 0 local function yes() return true end
+   notifyBookState()                M 2 function Device:notifyBookState(title, document) end
+   onPowerEvent()                   M 1 function Device:onPowerEvent(ev)
+   openLink()                       f 0 local function no() return false end
+   otaModel()                       M 0 function Device:otaModel()
+   performHapticFeedback()          M 1 function Device:performHapticFeedback(type) end
+   ping4()                          M 1 function Device:ping4(ip)
+   powerOff()                       M 0 function Device:powerOff() end
+   reboot()                         M 0 function Device:reboot() end
+   rescheduleSuspend()              M 0 function Device:rescheduleSuspend()
+   restoreKeyRepeat()               M 0 function Device:restoreKeyRepeat() end
+   resume()                         M 0 function Device:resume() end
+   retrieveNetworkInfo()            M 0 function Device:retrieveNetworkInfo()
+   saveSettings()                   M 0 function Device:saveSettings() end
+   setAutoStandby()                 M 1 function Device:setAutoStandby(isAllowed) end
+   setDateTime()                    M 6 function Device:setDateTime(year, month, day, hour, min, sec) end
+   setEventHandlers()               M 1 function Device:setEventHandlers(uimgr)
+   setIgnoreInput()                 M 1 function Device:setIgnoreInput(enable) return true end
+   setScreenDPI()                   M 1 function Device:setScreenDPI(dpi_override)
+   setTime()                        M 2 function Device:setTime(hour, min)
+   setupChargingLED()               M 0 function Device:setupChargingLED() end
+   showLightDialog()                M 0 function Device:showLightDialog()
+   simulateResume()                 M 0 function Device:simulateResume() end
+   simulateSuspend()                M 0 function Device:simulateSuspend() end
+   standby()                        M 1 function Device:standby(max_duration) end
+   startTextInput()                 f 0 startTextInput = function() end,
+   stopTextInput()                  f 0 stopTextInput = function() end,
+   supportsScreensaver()            M 0 function Device:supportsScreensaver() return false end
+   suspend()                        M 0 function Device:suspend() end
+   toggleChargingLED()              M 1 function Device:toggleChargingLED(toggle) end
+   toggleFullscreen()               M 0 function Device:toggleFullscreen() end
+   toggleGSensor()                  M 1 function Device:toggleGSensor(toggle)
+   toggleKeyRepeat()                M 1 function Device:toggleKeyRepeat(toggle) end
+   unpackArchive()                  M 3 function Device:unpackArchive(archive, extract_to, with_stripped_root)
+   usbPlugIn()                      M 0 function Device:usbPlugIn() end
+   usbPlugOut()                     M 0 function Device:usbPlugOut() end
+   useDPadAsActionKeys()            f 0 local function no() return false end
+   usingForcedRotation()            f 0 usingForcedRotation = function() return nil end,
+
+
+   /koreader/UIManager/
+  UIManager instance
+   FULL_REFRESH_COUNT: 99
+   ZMQ_TIMEOUT: 50000
+   _entered_poweroff_stage: false
+   _input_gestures_disabled: false
+   _now: 4268589948
+   _prev_prevent_standby_count: 0
+   _prevent_standby_count: 0
+   _task_queue_dirty: false
+   currently_scrolling: false
+   refresh_count: 3
+   refresh_counted: false
+J  _dirty 
+J  _refresh_func_stack 
+J  _refresh_stack 
+J  _task_queue 
+J  _window_stack 
+J  _zeromqs 
+J  event_handlers 
+J  event_hook                       HookContainer
+   ToggleNightMode()                M 1 function UIManager:ToggleNightMode(night_mode)
+   _checkTasks()                    M 0 function UIManager:_checkTasks()
+   _gated_quit()                    f 0 self._gated_quit = function() return self:quit(nil, true) end
+   _refresh()                       M 3 function UIManager:_refresh(mode, region, dither)
+   _repaint()                       M 0 function UIManager:_repaint()
+   _standbyTransition()             M 0 function UIManager:_standbyTransition()
+   abort()                          M 0 function UIManager:abort()
+   allowStandby()                   M 0 function UIManager:allowStandby()
+   askForPowerOff()                 M 1 function UIManager:askForPowerOff(message_text)
+   askForReboot()                   M 1 function UIManager:askForReboot(message_text)
+   askForRestart()                  M 1 function UIManager:askForRestart(message_text)
+   avoidFlashOnNextRepaint()        M 0 function UIManager:avoidFlashOnNextRepaint()
+   broadcastEvent()                 M 1 function UIManager:broadcastEvent(event)
+   close()                          M 4 function UIManager:close(widget, refreshtype, refreshregion, refreshdither)
+   consumeInputEarlyAfterPM()       M 1 function UIManager:consumeInputEarlyAfterPM(toggle)
+   debounce()                       M 3 function UIManager:debounce(seconds, immediate, action)
+   flushSettings()                  M 0 function UIManager:flushSettings()
+   forceRePaint()                   M 0 function UIManager:forceRePaint()
+   getElapsedTimeSinceBoot()        M 0 function UIManager:getElapsedTimeSinceBoot()
+   getNextTaskTime()                M 0 function UIManager:getNextTaskTime()
+   getNthTopWidget()                M 1 function UIManager:getNthTopWidget(n)
+   getRefreshRate()                 M 0 function UIManager:getRefreshRate()
+   getTime()                        M 0 function UIManager:getTime()
+   getTopmostVisibleWidget()        M 0 function UIManager:getTopmostVisibleWidget()
+   handleInput()                    M 0 function UIManager:handleInput()
+   handleInputEvent()               M 1 function UIManager:handleInputEvent(input_event)
+   init()                           M 0 function UIManager:init()
+   initLooper()                     M 0 function UIManager:initLooper()
+   insertZMQ()                      M 1 function UIManager:insertZMQ(zeromq)
+   isSubwidgetShown()               M 2 function UIManager:isSubwidgetShown(widget, max_depth)
+   isWidgetShown()                  M 1 function UIManager:isWidgetShown(widget)
+   nextTick()                       M * function UIManager:nextTick(action, ...)
+   onRotation()                     M 0 function UIManager:onRotation()
+   poweroff_action()                f 0 self.poweroff_action = function()
+   preventStandby()                 M 0 function UIManager:preventStandby()
+   processZMQs()                    M 0 function UIManager:processZMQs()
+   quit()                           M 2 function UIManager:quit(exit_code, implicit)
+   reboot_action()                  f 0 self.reboot_action = function()
+   removeZMQ()                      M 1 function UIManager:removeZMQ(zeromq)
+   resetInputTimeout()              M 0 function UIManager:resetInputTimeout()
+   restartKOReader()                M 0 function UIManager:restartKOReader()
+   run()                            M 0 function UIManager:run()
+   runOnce()                        M 0 function UIManager:runOnce()
+   schedule()                       M * function UIManager:schedule(sched_time, action, ...)
+   scheduleIn()                     M * function UIManager:scheduleIn(seconds, action, ...)
+   sendEvent()                      M 1 function UIManager:sendEvent(event)
+   setDirty()                       M 4 function UIManager:setDirty(widget, refreshtype, refreshregion, refreshdither)
+   setIgnoreTouchInput()            M 1 function UIManager:setIgnoreTouchInput(state)
+   setInputTimeout()                M 1 function UIManager:setInputTimeout(timeout)
+   setRefreshRate()                 M 2 function UIManager:setRefreshRate(rate, night_rate)
+   setRunForeverMode()              M 0 function UIManager:setRunForeverMode()
+   shiftScheduledTasksBy()          M 1 function UIManager:shiftScheduledTasksBy(shift_time)
+   show()                           M 6 function UIManager:show(widget, refreshtype, refreshregion, x, y, refreshdither)
+   suspend()                        M 0 function UIManager:suspend()
+   tickAfterNext()                  M * function UIManager:tickAfterNext(action, ...)
+   topdown_widgets_iter()           M 0 function UIManager:topdown_widgets_iter()
+   unschedule()                     M 1 function UIManager:unschedule(action)
+   unsetRunForeverMode()            M 0 function UIManager:unsetRunForeverMode()
+   waitForVSync()                   M 0 function UIManager:waitForVSync()
+   widgetInvert()                   M 5 function UIManager:widgetInvert(widget, x, y, w, h)
+   widgetRepaint()                  M 3 function UIManager:widgetRepaint(widget, x, y)
+   yieldToEPDC()                    M 1 function UIManager:yieldToEPDC(sleep_us)
+
+    /koreader/g_settings/
+   file: ./settings.reader.lua
+J  data 
+   addTableItem()                   M 2 function LuaSettings:addTableItem(key, value)
+   backup()                         M 1 function LuaSettings:backup(file)
+   child()                          M 1 function LuaSettings:child(key)
+   close()                          M 0 function LuaSettings:close()
+   delSetting()                     M 1 function LuaSettings:delSetting(key)
+   extend()                         M 1 function LuaSettings:extend(o)
+   flipFalse()                      M 1 function LuaSettings:flipFalse(key)
+   flipNilOrFalse()                 M 1 function LuaSettings:flipNilOrFalse(key)
+   flipNilOrTrue()                  M 1 function LuaSettings:flipNilOrTrue(key)
+   flipTrue()                       M 1 function LuaSettings:flipTrue(key)
+   flush()                          M 0 function LuaSettings:flush()
+   getSettingForExt()               M 2 function LuaSettings:getSettingForExt(key, ext)
+   has()                            M 1 function LuaSettings:has(key)
+   hasNot()                         M 1 function LuaSettings:hasNot(key)
+   initializeExtSettings()          M 3 function LuaSettings:initializeExtSettings(key, defaults, force_init)
+   isFalse()                        M 1 function LuaSettings:isFalse(key)
+   isTrue()                         M 1 function LuaSettings:isTrue(key)
+   makeFalse()                      M 1 function LuaSettings:makeFalse(key)
+   makeTrue()                       M 1 function LuaSettings:makeTrue(key)
+   nilOrFalse()                     M 1 function LuaSettings:nilOrFalse(key)
+   nilOrTrue()                      M 1 function LuaSettings:nilOrTrue(key)
+   open()                           M 1 function LuaSettings:open(file_path)
+   purge()                          M 0 function LuaSettings:purge()
+   readSetting()                    M 2 function LuaSettings:readSetting(key, default)
+   removeTableItem()                M 2 function LuaSettings:removeTableItem(key, index)
+   reset()                          M 1 function LuaSettings:reset(table)
+   saveSetting()                    M 2 function LuaSettings:saveSetting(key, value)
+   saveSettingForExt()              M 3 function LuaSettings:saveSettingForExt(key, value, ext)
+   toggle()                         M 1 function LuaSettings:toggle(key)
+   wrap()                           M 1 function LuaSettings:wrap(data)
+
+
+/koreader/globals/
+   _VERSION: Lua 5.1
+J  G_defaults 
+J  G_reader_settings 
+J  _G 
+J  arg 
+J  bit 
+J  coroutine 
+J  debug 
+J  input 
+J  io 
+J  jit 
+J  json 
+J  lfs 
+J  lpeg 
+J  ltn12 
+J  math 
+J  nnsvg                            
+J  os 
+J  package 
+J  string 
+J  table                            
+J  xtext                            
+   assert()                         f * function: builtin#2
+   collectgarbage()                 f * function: builtin#27
+   dofile()                         f * function: builtin#25
+   error()                          f * function: builtin#19
+   gcinfo()                         f * function: builtin#26
+   getfenv()                        f * function: builtin#10
+   getmetatable()                   f * function: builtin#8
+   ipairs()                         f * function: builtin#7
+   load()                           f * function: builtin#23
+   loadfile()                       f * function: builtin#22
+   loadstring()                     f * function: builtin#24
+   module()                         f * function: 0x2abe38a8
+   newproxy()                       f * function: builtin#28
+   next()                           f * function: builtin#4
+   pairs()                          f * function: builtin#5
+   pcall()                          f * function: builtin#20
+   print()                          f * function: builtin#29
+   rawequal()                       f * function: builtin#14
+   rawget()                         f * function: builtin#12
+   rawset()                         f * function: builtin#13
+   require()                        f * function: 0x2abe38e8
+   select()                         f * function: builtin#16
+   setfenv()                        f * function: builtin#11
+   setmetatable()                   f * function: builtin#9
+   tonumber()                       f * function: builtin#17
+   tostring()                       f * function: builtin#18
+   type()                           f * function: builtin#3
+   unpack()                         f * function: builtin#15
+   xpcall()                         f * function: builtin#21
+
+
+   /koreader/UIManager/
+  UIManager instance
+   FULL_REFRESH_COUNT: 99
+   ZMQ_TIMEOUT: 50000
+   _entered_poweroff_stage: false
+   _input_gestures_disabled: false
+   _now: 4832589664
+   _prev_prevent_standby_count: 0
+   _prevent_standby_count: 0
+   _task_queue_dirty: false
+   currently_scrolling: false
+   refresh_count: 0
+   refresh_counted: false
+J  _dirty 
+J  _refresh_func_stack 
+J  _refresh_stack 
+J  _task_queue 
+J  _window_stack 
+J  _zeromqs 
+J  event_handlers 
+J  event_hook                       HookContainer
+   ToggleNightMode()                M 1 function UIManager:ToggleNightMode(night_mode)
+   _checkTasks()                    M 0 function UIManager:_checkTasks()
+   _gated_quit()                    f 0 self._gated_quit = function() return self:quit(nil, true) end
+   _refresh()                       M 3 function UIManager:_refresh(mode, region, dither)
+   _repaint()                       M 0 function UIManager:_repaint()
+   _standbyTransition()             M 0 function UIManager:_standbyTransition()
+   abort()                          M 0 function UIManager:abort()
+   allowStandby()                   M 0 function UIManager:allowStandby()
+   askForPowerOff()                 M 1 function UIManager:askForPowerOff(message_text)
+   askForReboot()                   M 1 function UIManager:askForReboot(message_text)
+   askForRestart()                  M 1 function UIManager:askForRestart(message_text)
+   avoidFlashOnNextRepaint()        M 0 function UIManager:avoidFlashOnNextRepaint()
+   broadcastEvent()                 M 1 function UIManager:broadcastEvent(event)
+   close()                          M 4 function UIManager:close(widget, refreshtype, refreshregion, refreshdither)
+   consumeInputEarlyAfterPM()       M 1 function UIManager:consumeInputEarlyAfterPM(toggle)
+   debounce()                       M 3 function UIManager:debounce(seconds, immediate, action)
+   flushSettings()                  M 0 function UIManager:flushSettings()
+   forceRePaint()                   M 0 function UIManager:forceRePaint()
+   getElapsedTimeSinceBoot()        M 0 function UIManager:getElapsedTimeSinceBoot()
+   getNextTaskTime()                M 0 function UIManager:getNextTaskTime()
+   getNthTopWidget()                M 1 function UIManager:getNthTopWidget(n)
+   getRefreshRate()                 M 0 function UIManager:getRefreshRate()
+   getTime()                        M 0 function UIManager:getTime()
+   getTopmostVisibleWidget()        M 0 function UIManager:getTopmostVisibleWidget()
+   handleInput()                    M 0 function UIManager:handleInput()
+   handleInputEvent()               M 1 function UIManager:handleInputEvent(input_event)
+   init()                           M 0 function UIManager:init()
+   initLooper()                     M 0 function UIManager:initLooper()
+   insertZMQ()                      M 1 function UIManager:insertZMQ(zeromq)
+   isSubwidgetShown()               M 2 function UIManager:isSubwidgetShown(widget, max_depth)
+   isWidgetShown()                  M 1 function UIManager:isWidgetShown(widget)
+   nextTick()                       M * function UIManager:nextTick(action, ...)
+   onRotation()                     M 0 function UIManager:onRotation()
+   poweroff_action()                f 0 self.poweroff_action = function()
+   preventStandby()                 M 0 function UIManager:preventStandby()
+   processZMQs()                    M 0 function UIManager:processZMQs()
+   quit()                           M 2 function UIManager:quit(exit_code, implicit)
+   reboot_action()                  f 0 self.reboot_action = function()
+   removeZMQ()                      M 1 function UIManager:removeZMQ(zeromq)
+   resetInputTimeout()              M 0 function UIManager:resetInputTimeout()
+   restartKOReader()                M 0 function UIManager:restartKOReader()
+   run()                            M 0 function UIManager:run()
+   runOnce()                        M 0 function UIManager:runOnce()
+   schedule()                       M * function UIManager:schedule(sched_time, action, ...)
+   scheduleIn()                     M * function UIManager:scheduleIn(seconds, action, ...)
+   sendEvent()                      M 1 function UIManager:sendEvent(event)
+   setDirty()                       M 4 function UIManager:setDirty(widget, refreshtype, refreshregion, refreshdither)
+   setIgnoreTouchInput()            M 1 function UIManager:setIgnoreTouchInput(state)
+   setInputTimeout()                M 1 function UIManager:setInputTimeout(timeout)
+   setRefreshRate()                 M 2 function UIManager:setRefreshRate(rate, night_rate)
+   setRunForeverMode()              M 0 function UIManager:setRunForeverMode()
+   shiftScheduledTasksBy()          M 1 function UIManager:shiftScheduledTasksBy(shift_time)
+   show()                           M 6 function UIManager:show(widget, refreshtype, refreshregion, x, y, refreshdither)
+   suspend()                        M 0 function UIManager:suspend()
+   tickAfterNext()                  M * function UIManager:tickAfterNext(action, ...)
+   topdown_widgets_iter()           M 0 function UIManager:topdown_widgets_iter()
+   unschedule()                     M 1 function UIManager:unschedule(action)
+   unsetRunForeverMode()            M 0 function UIManager:unsetRunForeverMode()
+   waitForVSync()                   M 0 function UIManager:waitForVSync()
+   widgetInvert()                   M 5 function UIManager:widgetInvert(widget, x, y, w, h)
+   widgetRepaint()                  M 3 function UIManager:widgetRepaint(widget, x, y)
+   yieldToEPDC()                    M 1 function UIManager:yieldToEPDC(sleep_us)
+
+
+/koreader/g_settings/
+   file: ./settings.reader.lua
+J  data 
+   addTableItem()                   M 2 function LuaSettings:addTableItem(key, value)
+   backup()                         M 1 function LuaSettings:backup(file)
+   child()                          M 1 function LuaSettings:child(key)
+   close()                          M 0 function LuaSettings:close()
+   delSetting()                     M 1 function LuaSettings:delSetting(key)
+   extend()                         M 1 function LuaSettings:extend(o)
+   flipFalse()                      M 1 function LuaSettings:flipFalse(key)
+   flipNilOrFalse()                 M 1 function LuaSettings:flipNilOrFalse(key)
+   flipNilOrTrue()                  M 1 function LuaSettings:flipNilOrTrue(key)
+   flipTrue()                       M 1 function LuaSettings:flipTrue(key)
+   flush()                          M 0 function LuaSettings:flush()
+   getSettingForExt()               M 2 function LuaSettings:getSettingForExt(key, ext)
+   has()                            M 1 function LuaSettings:has(key)
+   hasNot()                         M 1 function LuaSettings:hasNot(key)
+   initializeExtSettings()          M 3 function LuaSettings:initializeExtSettings(key, defaults, force_init)
+   isFalse()                        M 1 function LuaSettings:isFalse(key)
+   isTrue()                         M 1 function LuaSettings:isTrue(key)
+   makeFalse()                      M 1 function LuaSettings:makeFalse(key)
+   makeTrue()                       M 1 function LuaSettings:makeTrue(key)
+   nilOrFalse()                     M 1 function LuaSettings:nilOrFalse(key)
+   nilOrTrue()                      M 1 function LuaSettings:nilOrTrue(key)
+   open()                           M 1 function LuaSettings:open(file_path)
+   purge()                          M 0 function LuaSettings:purge()
+   readSetting()                    M 2 function LuaSettings:readSetting(key, default)
+   removeTableItem()                M 2 function LuaSettings:removeTableItem(key, index)
+   reset()                          M 1 function LuaSettings:reset(table)
+   saveSetting()                    M 2 function LuaSettings:saveSetting(key, value)
+   saveSettingForExt()              M 3 function LuaSettings:saveSettingForExt(key, value, ext)
+   toggle()                         M 1 function LuaSettings:toggle(key)
+   wrap()                           M 1 function LuaSettings:wrap(data)
+
+List of high-level KOReader events
+(all those available as actions for gestures and profiles)
+常规
+Close top most widget
+  /koreader/event/Close
+
+手势概览
+  /koreader/event/ShowGestureOverview
+文件管理器
+  /koreader/event/Home
+打开之前的文档
+  /koreader/event/OpenLastDoc
+历史记录
+  /koreader/event/ShowHist
+在历史记录中搜索
+  /koreader/event/SearchHistory
+收藏
+  /koreader/event/ShowColl
+书单
+  /koreader/event/ShowCollList
+在书单中搜索
+  /koreader/event/ShowCollectionsSearchDialog
+
+查词典
+  /koreader/event/ShowDictionaryLookup
+加载词典预置
+循环切换词典预设
+  /koreader/event/CycleDictionaryPresets
+查询维基百科
+  /koreader/event/ShowWikipediaLookup
+
+呼出菜单
+  /koreader/event/ShowMenu
+搜索菜单
+  /koreader/event/MenuSearch
+打开当前文件夹中的下一个文件
+  /koreader/event/OpenNextOrPreviousFileInFolder
+打开当前文件夹中的上一个文件
+  /koreader/event/OpenNextOrPreviousFileInFolder/true
+笔记文件
+  /koreader/event/ShowNotebookFile
+屏幕截图
+  /koreader/event/Screenshot
+
+显示阅读进度
+  /koreader/event/ShowEphemeris
+在 Calibre 元数据中搜索
+  /koreader/event/CalibreSearch
+浏览所有的calibre标签
+  /koreader/event/CalibreBrowseBy/tags
+浏览所有的calibre丛书
+  /koreader/event/CalibreBrowseBy/series
+浏览所有的Calibre作者
+  /koreader/event/CalibreBrowseBy/authors
+浏览所有的calibre标签
+  /koreader/event/CalibreBrowseBy/title
+
+Calibre 无线连接
+  /koreader/event/StartWirelessConnection
+Calibre 无线连接断开
+  /koreader/event/CloseWirelessConnection
+
+Toggle FilebrowserPlus server
+  /koreader/event/ToggleFilebrowserPlusServer
+设置阅读计时器闹钟
+  /koreader/event/ShowAlarm
+设置阅读计时器间隔
+  /koreader/event/ShowTimer
+停止阅读计时器
+  /koreader/event/StopTimer
+
+阅读统计
+  /koreader/event/ToggleStatistics/true 	启用
+  /koreader/event/ToggleStatistics/false 	禁用
+阅读统计：切换
+  /koreader/event/ToggleStatistics
+阅读统计：显示阅读进度
+  /koreader/event/ShowReaderProgress
+阅读统计：显示时间跨度
+  /koreader/event/ShowTimeRange
+阅读统计：显示日历视图
+  /koreader/event/ShowCalendarView
+阅读统计：显示当天时间轴
+  /koreader/event/ShowCalendarDayView
+阅读统计：同步
+  /koreader/event/SyncBookStats
+
+文本编辑器：打开上次的文件
+  /koreader/event/OpenLastEditedFile
+
+打开词汇本
+  /koreader/event/ShowVocabBuilder
+
+设备
+退出屏保程序
+  /koreader/event/ExitScreensaver
+启动 USB 读写模式
+  /koreader/event/RequestUSBMS
+休眠
+  /koreader/event/RequestSuspend
+重启 KOReader
+  /koreader/event/Restart
+重启设备
+  /koreader/event/RequestReboot
+关机
+  /koreader/event/RequestPowerOff
+退出 KOReader
+  /koreader/event/Exit
+
+触发屏幕边角长按动作
+  /koreader/event/IgnoreHoldCorners
+启用触摸输入
+  /koreader/event/IgnoreTouchInput/false
+禁用触摸输入
+  /koreader/event/IgnoreTouchInput/true
+开/关 触摸输入
+  /koreader/event/IgnoreTouchInput
+
+屏幕方向
+  /koreader/event/ConfigChange/rotation_mode/3/&/SetRotationMode/3 	⤹ 90°
+  /koreader/event/ConfigChange/rotation_mode/0/&/SetRotationMode/0 	↑ 0°
+  /koreader/event/ConfigChange/rotation_mode/1/&/SetRotationMode/1 	⤸ 90°
+  /koreader/event/ConfigChange/rotation_mode/2/&/SetRotationMode/2 	↓ 180°
+切换屏幕方向
+  /koreader/event/SwapRotation
+屏幕旋转180°
+  /koreader/event/InvertRotation
+顺时针旋转90°
+  /koreader/event/IterateRotation
+逆时针旋转90°
+  /koreader/event/IterateRotation/true
+
+启用 Wi-Fi
+  /koreader/event/InfoWifiOn
+关闭 Wi-Fi
+  /koreader/event/InfoWifiOff
+开/关 Wi-Fi
+  /koreader/event/ToggleWifi
+显示网络信息
+  /koreader/event/ShowNetworkInfo
+
+电量统计
+  /koreader/event/ShowBatteryStatistics
+
+系统统计
+  /koreader/event/ShowSysStatistics
+
+终端模拟器
+  /koreader/event/TerminalStart
+屏幕和灯光
+显示前光设置面板
+  /koreader/event/ShowFlDialog
+开/关 前光
+  /koreader/event/ToggleFrontlight
+设置前光亮度
+  /koreader/event/SetFlIntensity/0 	min
+  /koreader/event/SetFlIntensity/50 	
+  /koreader/event/SetFlIntensity/100 	max
+增加前光亮度
+  /koreader/event/IncreaseFlIntensity/1 	min
+  /koreader/event/IncreaseFlIntensity/50.5 	
+  /koreader/event/IncreaseFlIntensity/100 	max
+降低前光亮度
+  /koreader/event/DecreaseFlIntensity/1 	min
+  /koreader/event/DecreaseFlIntensity/50.5 	
+  /koreader/event/DecreaseFlIntensity/100 	max
+设置前光色温
+  /koreader/event/SetFlWarmth/0 	min
+  /koreader/event/SetFlWarmth/50 	
+  /koreader/event/SetFlWarmth/100 	max
+增加前光色温
+  /koreader/event/IncreaseFlWarmth/1 	min
+  /koreader/event/IncreaseFlWarmth/50.5 	
+  /koreader/event/IncreaseFlWarmth/100 	max
+降低前光色温
+  /koreader/event/DecreaseFlWarmth/1 	min
+  /koreader/event/DecreaseFlWarmth/50.5 	
+  /koreader/event/DecreaseFlWarmth/100 	max
+
+开/关 夜间模式
+  /koreader/event/ToggleNightMode
+设置夜间模式
+  /koreader/event/SetNightMode/true 	开启
+  /koreader/event/SetNightMode/false 	关闭
+
+完全刷新
+  /koreader/event/FullRefresh
+完全刷新频率（始终）
+  /koreader/event/SetBothRefreshRates/-1 	off / none
+  /koreader/event/SetBothRefreshRates/0 	min
+  /koreader/event/SetBothRefreshRates/100 	
+  /koreader/event/SetBothRefreshRates/200 	max
+完全刷新频率 （夜间模式下无效）
+  /koreader/event/SetDayRefreshRate/-1 	off / none
+  /koreader/event/SetDayRefreshRate/0 	min
+  /koreader/event/SetDayRefreshRate/100 	
+  /koreader/event/SetDayRefreshRate/200 	max
+完全刷新频率 （夜间模式下）
+  /koreader/event/SetNightRefreshRate/-1 	off / none
+  /koreader/event/SetNightRefreshRate/0 	min
+  /koreader/event/SetNightRefreshRate/100 	
+  /koreader/event/SetNightRefreshRate/200 	max
+进入新章节时始终刷新
+  /koreader/event/SetFlashOnChapterBoundaries/true 	开启
+  /koreader/event/SetFlashOnChapterBoundaries/false 	关闭
+开/关 进入新章节时刷新
+  /koreader/event/ToggleFlashOnChapterBoundaries
+永不在章节的第二页刷新
+  /koreader/event/SetNoFlashOnSecondChapterPage/true 	开启
+  /koreader/event/SetNoFlashOnSecondChapterPage/false 	关闭
+开/关 在章节的第二页刷新
+  /koreader/event/ToggleNoFlashOnSecondChapterPage
+页面带有插图时始终刷新
+  /koreader/event/SetFlashOnPagesWithImages/true 	开启
+  /koreader/event/SetFlashOnPagesWithImages/false 	关闭
+开/关 页面带有插图时刷新
+  /koreader/event/ToggleFlashOnPagesWithImages
+
+自动色温调整关闭
+  /koreader/event/AutoWarmthOff
+根据太阳位置自动调整色温
+  /koreader/event/AutoWarmthMode/1
+根据时间表自动调整色温
+  /koreader/event/AutoWarmthMode/2
+接近午夜时自动调整色温
+  /koreader/event/AutoWarmthMode/4
+接近正午时自动调整色温
+  /koreader/event/AutoWarmthMode/3
+按照模式自动切换对应色温设置
+  /koreader/event/AutoWarmthMode
+文件管理器
+设置文件视图    (no effect on current application/document)
+  /koreader/event/SetDisplayMode/classic 	经典（仅文件名）
+  /koreader/event/SetDisplayMode/mosaic_image 	图片封面网格
+  /koreader/event/SetDisplayMode/mosaic_text 	文字封面网格
+  /koreader/event/SetDisplayMode/list_image_meta 	详细列表（封面图片 + 元数据）
+  /koreader/event/SetDisplayMode/list_only_meta 	详细列表（元数据 + 无封面）
+  /koreader/event/SetDisplayMode/list_image_filename 	详细列表（封面图片 + 文件名）
+排序依据    (no effect on current application/document)
+  /koreader/event/SetSortBy/strcoll 	文件名
+  /koreader/event/SetSortBy/natural 	文件名（自然排序）
+  /koreader/event/SetSortBy/access 	最后阅读日期
+  /koreader/event/SetSortBy/date 	修改日期
+  /koreader/event/SetSortBy/size 	文件大小
+  /koreader/event/SetSortBy/type 	类型
+  /koreader/event/SetSortBy/percent_unopened_first 	百分比 – 未读的靠前
+  /koreader/event/SetSortBy/percent_unopened_last 	百分比 – 未读的靠后
+  /koreader/event/SetSortBy/percent_natural 	百分比 – 未读 – 已读
+  /koreader/event/SetSortBy/title 	书名
+  /koreader/event/SetSortBy/authors 	作者
+  /koreader/event/SetSortBy/series 	丛书
+  /koreader/event/SetSortBy/keywords 	关键词
+倒序    (no effect on current application/document)
+  /koreader/event/SetReverseSorting/true 	开启
+  /koreader/event/SetReverseSorting/false 	关闭
+混排文件夹与文件    (no effect on current application/document)
+  /koreader/event/SetMixedSorting/true 	开启
+  /koreader/event/SetMixedSorting/false 	关闭
+
+显示附加菜单    (no effect on current application/document)
+  /koreader/event/ShowPlusMenu
+切换选择模式    (no effect on current application/document)
+  /koreader/event/ToggleSelectMode
+刷新内容    (no effect on current application/document)
+  /koreader/event/RefreshContent
+文件夹快捷方式    (no effect on current application/document)
+  /koreader/event/ShowFolderShortcutsDialog
+文件搜索    (no effect on current application/document)
+  /koreader/event/ShowFileSearch
+之前的文件搜索结果    (no effect on current application/document)
+  /koreader/event/ShowSearchResults
+返回上级文件夹    (no effect on current application/document)
+  /koreader/event/FolderUp
+前往页面    (no effect on current application/document)
+  /koreader/event/ShowGotoDialog
+返回    (no effect on current application/document)
+  /koreader/event/Back
+
+云存储    (no effect on current application/document)
+  /koreader/event/ShowCloudStorage
+OPDS 书目    (no effect on current application/document)
+  /koreader/event/ShowOPDSCatalog
+阅读器
+显示底部菜单
+  /koreader/event/ShowConfigMenu
+显示/隐藏状态栏
+  /koreader/event/ToggleFooterMode
+打开/关闭章节进度条
+  /koreader/event/ToggleChapterProgressBar
+加载状态栏预设
+
+上一章
+  /koreader/event/GotoPrevChapter
+下一章
+  /koreader/event/GotoNextChapter
+扉页
+  /koreader/event/GoToBeginning
+尾页
+  /koreader/event/GoToEnd
+随机页
+  /koreader/event/GoToRandomPage
+翻页
+  /koreader/event/GotoViewRel/-100 	min
+  /koreader/event/GotoViewRel/-1 	-1 page
+  /koreader/event/GotoViewRel/0 	
+  /koreader/event/GotoViewRel/1 	+1 page
+  /koreader/event/GotoViewRel/100 	max
+前往页面
+  /koreader/event/ShowGotoDialog
+快速翻页
+  /koreader/event/ShowSkimtoDialog
+Pin current page
+  /koreader/event/PinPage
+Go to pinned page
+  /koreader/event/GoToPinnedPage
+
+上一处书签
+  /koreader/event/GotoPreviousBookmarkFromPage
+下一处书签
+  /koreader/event/GotoNextBookmarkFromPage
+首个书签
+  /koreader/event/GotoFirstBookmark
+末条书签
+  /koreader/event/GotoLastBookmark
+最新书签
+  /koreader/event/GoToLatestBookmark
+
+返回
+  /koreader/event/Back
+返回前一位置
+  /koreader/event/GoBackLink/true
+前往后一位置
+  /koreader/event/GoForwardLink/true
+跳转到最近的链接
+  /koreader/event/GoToPageLink/... unsupported (gesture arguments)
+跳转到最近的内链
+  /koreader/event/GoToInternalPageLink/... unsupported (gesture arguments)
+切换点击以跳转链接
+  /koreader/event/ToggleTapLinks
+将当前位置添加到历史记录中
+  /koreader/event/AddCurrentLocationToStack/true
+清除位置历史记录
+  /koreader/event/ClearLocationStack/true
+
+全文搜索
+  /koreader/event/ShowFulltextSearchInput
+上次的全文搜索结果
+  /koreader/event/ShowFindAllResults
+全文搜索: 返回原始页面
+  /koreader/event/GoToStartPage
+目录
+  /koreader/event/ShowToc
+书籍地图
+  /koreader/event/ShowBookMap
+书籍地图（预览）
+  /koreader/event/ShowBookMap/true
+页面预览
+  /koreader/event/ShowPageBrowser
+书签
+  /koreader/event/ShowBookmark
+书签搜索
+  /koreader/event/SearchBookmark
+标记/取消书签
+  /koreader/event/ToggleBookmark
+
+书籍状态
+  /koreader/event/ShowBookStatus
+书籍信息
+  /koreader/event/ShowBookInfo
+书籍简介
+  /koreader/event/ShowBookDescription
+书籍封面
+  /koreader/event/ShowBookCover
+
+翻译本页
+  /koreader/event/TranslateCurrentPage
+
+反转翻页手势
+  /koreader/event/ToggleReadingOrder/true 	开启
+  /koreader/event/ToggleReadingOrder/false 	关闭
+切换翻页方向
+  /koreader/event/ToggleReadingOrder
+开/关 自定义目录
+  /koreader/event/ToggleHandmadeToc
+切换自定义隐藏页
+  /koreader/event/ToggleHandmadeFlows
+
+设置标注动作
+  /koreader/event/SetHighlightAction/1 	使用弹出对话框询问
+  /koreader/event/SetHighlightAction/2 	什么也不做
+  /koreader/event/SetHighlightAction/3 	标注
+  /koreader/event/SetHighlightAction/4 	选择并标注
+  /koreader/event/SetHighlightAction/5 	添加笔记
+  /koreader/event/SetHighlightAction/6 	翻译
+  /koreader/event/SetHighlightAction/7 	维基百科
+  /koreader/event/SetHighlightAction/8 	词典
+  /koreader/event/SetHighlightAction/9 	全文搜索
+重复标注动作
+  /koreader/event/CycleHighlightAction
+重复标注样式
+  /koreader/event/CycleHighlightStyle
+
+保存书籍元数据
+  /koreader/event/FlushSettings/true
+
+导出笔记
+  /koreader/event/ExportAnnotations
+将当前书籍存档
+  /koreader/event/MoveToArchive
+阅读统计：当前书籍
+  /koreader/event/ShowBookStats
+可重排文档 （epub, fb2, txt…）
+设置排版语言    (no effect on current application/document)
+  /koreader/event/SetTypographyLanguage/true 	书籍语言
+  /koreader/event/SetTypographyLanguage/hy 	亚美尼亚语
+  /koreader/event/SetTypographyLanguage/eu 	巴斯克语
+  /koreader/event/SetTypographyLanguage/bg 	保加利亚语
+  /koreader/event/SetTypographyLanguage/ca 	加泰罗尼亚语
+  /koreader/event/SetTypographyLanguage/zh-CN 	中文（简体）
+  /koreader/event/SetTypographyLanguage/zh-TW 	中文 （繁体）
+  /koreader/event/SetTypographyLanguage/hr 	克罗地亚语
+  /koreader/event/SetTypographyLanguage/cs 	捷克语
+  /koreader/event/SetTypographyLanguage/da 	丹麦语
+  /koreader/event/SetTypographyLanguage/nl 	荷兰语
+  /koreader/event/SetTypographyLanguage/en-GB 	English (UK)
+  /koreader/event/SetTypographyLanguage/en-US 	English (US)
+  /koreader/event/SetTypographyLanguage/eo 	世界语
+  /koreader/event/SetTypographyLanguage/et 	爱沙尼亚语
+  /koreader/event/SetTypographyLanguage/fi 	芬兰语
+  /koreader/event/SetTypographyLanguage/fr 	法语
+  /koreader/event/SetTypographyLanguage/fur 	弗留利语
+  /koreader/event/SetTypographyLanguage/gl 	加利西亚语
+  /koreader/event/SetTypographyLanguage/ka 	Georgian
+  /koreader/event/SetTypographyLanguage/de 	German
+  /koreader/event/SetTypographyLanguage/el 	Greek
+  /koreader/event/SetTypographyLanguage/hu 	Hungarian
+  /koreader/event/SetTypographyLanguage/is 	Icelandic
+  /koreader/event/SetTypographyLanguage/ga 	Irish
+  /koreader/event/SetTypographyLanguage/it 	Italian
+  /koreader/event/SetTypographyLanguage/ja 	日语
+  /koreader/event/SetTypographyLanguage/ko 	Korean
+  /koreader/event/SetTypographyLanguage/la 	Latin
+  /koreader/event/SetTypographyLanguage/la-lit 	拉丁语 (教堂礼拜用)
+  /koreader/event/SetTypographyLanguage/lv 	Latvian
+  /koreader/event/SetTypographyLanguage/lt 	Lithuanian
+  /koreader/event/SetTypographyLanguage/mk 	Macedonian
+  /koreader/event/SetTypographyLanguage/no 	Norwegian
+  /koreader/event/SetTypographyLanguage/oc 	奥克西唐语
+  /koreader/event/SetTypographyLanguage/pl 	Polish
+  /koreader/event/SetTypographyLanguage/pms 	皮埃蒙特语
+  /koreader/event/SetTypographyLanguage/pt 	Portuguese
+  /koreader/event/SetTypographyLanguage/pt-BR 	葡萄牙语 (巴西)
+  /koreader/event/SetTypographyLanguage/rm 	罗曼什语
+  /koreader/event/SetTypographyLanguage/ro 	罗马尼亚语
+  /koreader/event/SetTypographyLanguage/ru 	Russian
+  /koreader/event/SetTypographyLanguage/ru-GB 	Russian + English (UK)
+  /koreader/event/SetTypographyLanguage/ru-US 	Russian + English (US)
+  /koreader/event/SetTypographyLanguage/sr 	Serbian
+  /koreader/event/SetTypographyLanguage/sk 	Slovak
+  /koreader/event/SetTypographyLanguage/sl 	Slovenian
+  /koreader/event/SetTypographyLanguage/es 	西班牙语
+  /koreader/event/SetTypographyLanguage/sv 	Swedish
+  /koreader/event/SetTypographyLanguage/tr 	Turkish
+  /koreader/event/SetTypographyLanguage/uk 	乌克兰语
+  /koreader/event/SetTypographyLanguage/cy 	Welsh
+  /koreader/event/SetTypographyLanguage/zu 	Zulu
+
+字型    (no effect on current application/document)
+  /koreader/event/SetFont/??????? 	三极古拙楷书简
+  /koreader/event/SetFont/AI Kai 	Ai楷
+  /koreader/event/SetFont/Droid Sans Mono 	Droid Sans Mono
+  /koreader/event/SetFont/FZFW ZhuZi A Old Mincho 	方正FW筑紫A老明朝 简 M
+  /koreader/event/SetFont/FreeSans 	FreeSans
+  /koreader/event/SetFont/FreeSerif 	FreeSerif
+  /koreader/event/SetFont/KingHwa_OldSong 	京華老宋体
+  /koreader/event/SetFont/LXGW WenKai 	霞鹜文楷
+  /koreader/event/SetFont/LXGW WenKai Mono 	霞鹜文楷等宽
+  /koreader/event/SetFont/Noto Naskh Arabic 	Noto Naskh Arabic
+  /koreader/event/SetFont/Noto Sans 	Noto Sans
+  /koreader/event/SetFont/Noto Sans Arabic UI 	Noto Sans Arabic UI
+  /koreader/event/SetFont/Noto Sans Bengali UI 	Noto Sans Bengali UI
+  /koreader/event/SetFont/Noto Sans CJK SC 	Noto Sans CJK SC
+  /koreader/event/SetFont/Noto Sans Devanagari UI 	Noto Sans Devanagari UI
+  /koreader/event/SetFont/Noto Serif 	Noto Serif
+  /koreader/event/SetFont/Tsanger HuaXin 	仓耳华新体 标准
+  /koreader/event/SetFont/TsangerJinKai04 	仓耳今楷04 W04
+增大字号    (no effect on current application/document)
+  /koreader/event/IncreaseFontSize/0.5 	min
+  /koreader/event/IncreaseFontSize/1 	
+  /koreader/event/IncreaseFontSize/1.5 	
+  /koreader/event/IncreaseFontSize/2 	
+  /koreader/event/IncreaseFontSize/2.5 	
+  /koreader/event/IncreaseFontSize/3 	
+  /koreader/event/IncreaseFontSize/255 	max
+减小字号    (no effect on current application/document)
+  /koreader/event/DecreaseFontSize/0.5 	min
+  /koreader/event/DecreaseFontSize/1 	
+  /koreader/event/DecreaseFontSize/1.5 	
+  /koreader/event/DecreaseFontSize/2 	
+  /koreader/event/DecreaseFontSize/2.5 	
+  /koreader/event/DecreaseFontSize/3 	
+  /koreader/event/DecreaseFontSize/255 	max
+字号    (no effect on current application/document)
+  /koreader/event/ConfigChange/font_size/12/&/SetFontSize/12 	12
+  /koreader/event/ConfigChange/font_size/16/&/SetFontSize/16 	16
+  /koreader/event/ConfigChange/font_size/20/&/SetFontSize/20 	20
+  /koreader/event/ConfigChange/font_size/22/&/SetFontSize/22 	22 (default)
+  /koreader/event/ConfigChange/font_size/24/&/SetFontSize/24 	24
+  /koreader/event/ConfigChange/font_size/26/&/SetFontSize/26 	26
+  /koreader/event/ConfigChange/font_size/28/&/SetFontSize/28 	28
+  /koreader/event/ConfigChange/font_size/30/&/SetFontSize/30 	30
+  /koreader/event/ConfigChange/font_size/34/&/SetFontSize/34 	34
+  /koreader/event/ConfigChange/font_size/38/&/SetFontSize/38 	38
+  /koreader/event/ConfigChange/font_size/44/&/SetFontSize/44 	44
+字间距    (no effect on current application/document)
+  /koreader/event/ConfigChange/word_spacing/.../&/SetWordSpacing/... unsupported (table arguments)
+单词扩展    (no effect on current application/document)
+  /koreader/event/ConfigChange/word_expansion/0/&/SetWordExpansion/0 	无 %
+  /koreader/event/ConfigChange/word_expansion/5/&/SetWordExpansion/5 	小 %
+  /koreader/event/ConfigChange/word_expansion/15/&/SetWordExpansion/15 	大 %
+对比度    (no effect on current application/document)
+  /koreader/event/ConfigChange/font_gamma/10/&/SetFontGamma/10 	0.8
+  /koreader/event/ConfigChange/font_gamma/15/&/SetFontGamma/15 	1
+  /koreader/event/ConfigChange/font_gamma/25/&/SetFontGamma/25 	1.45
+  /koreader/event/ConfigChange/font_gamma/30/&/SetFontGamma/30 	1.9
+  /koreader/event/ConfigChange/font_gamma/36/&/SetFontGamma/36 	2.5
+  /koreader/event/ConfigChange/font_gamma/43/&/SetFontGamma/43 	4
+  /koreader/event/ConfigChange/font_gamma/49/&/SetFontGamma/49 	8
+  /koreader/event/ConfigChange/font_gamma/56/&/SetFontGamma/56 	15
+字重    (no effect on current application/document)
+  /koreader/event/ConfigChange/font_base_weight/-1/&/SetFontBaseWeight/-1 	-1
+  /koreader/event/ConfigChange/font_base_weight/-0.5/&/SetFontBaseWeight/-0.5 	-½
+  /koreader/event/ConfigChange/font_base_weight/0/&/SetFontBaseWeight/0 	0
+  /koreader/event/ConfigChange/font_base_weight/0.5/&/SetFontBaseWeight/0.5 	+½
+  /koreader/event/ConfigChange/font_base_weight/1/&/SetFontBaseWeight/1 	+1
+  /koreader/event/ConfigChange/font_base_weight/1.5/&/SetFontBaseWeight/1.5 	+1½
+  /koreader/event/ConfigChange/font_base_weight/3/&/SetFontBaseWeight/3 	+3
+字体微调    (no effect on current application/document)
+  /koreader/event/ConfigChange/font_hinting/0/&/SetFontHinting/0 	关闭
+  /koreader/event/ConfigChange/font_hinting/1/&/SetFontHinting/1 	原生
+  /koreader/event/ConfigChange/font_hinting/2/&/SetFontHinting/2 	自动
+字偶间距    (no effect on current application/document)
+  /koreader/event/ConfigChange/font_kerning/0/&/SetFontKerning/0 	关闭
+  /koreader/event/ConfigChange/font_kerning/1/&/SetFontKerning/1 	快速
+  /koreader/event/ConfigChange/font_kerning/2/&/SetFontKerning/2 	较好
+  /koreader/event/ConfigChange/font_kerning/3/&/SetFontKerning/3 	最佳
+
+双栏    (no effect on current application/document)
+  /koreader/event/ConfigChange/visible_pages/1/&/SetVisiblePages/1 	关闭
+  /koreader/event/ConfigChange/visible_pages/2/&/SetVisiblePages/2 	开启
+
+左右边距    (no effect on current application/document)
+  /koreader/event/ConfigChange/h_page_margins/.../&/SetPageHorizMargins/... unsupported (table arguments)
+上下边距相等    (no effect on current application/document)
+  /koreader/event/ConfigChange/sync_t_b_page_margins/0/&/SyncPageTopBottomMargins/false 	关闭
+  /koreader/event/ConfigChange/sync_t_b_page_margins/1/&/SyncPageTopBottomMargins/true 	开启
+上边距    (no effect on current application/document)
+  /koreader/event/ConfigChange/t_page_margin/5/&/SetPageTopMargin/5 	5
+  /koreader/event/ConfigChange/t_page_margin/10/&/SetPageTopMargin/10 	10
+  /koreader/event/ConfigChange/t_page_margin/15/&/SetPageTopMargin/15 	15 (default)
+  /koreader/event/ConfigChange/t_page_margin/20/&/SetPageTopMargin/20 	20
+  /koreader/event/ConfigChange/t_page_margin/30/&/SetPageTopMargin/30 	30
+  /koreader/event/ConfigChange/t_page_margin/50/&/SetPageTopMargin/50 	50
+  /koreader/event/ConfigChange/t_page_margin/70/&/SetPageTopMargin/70 	70
+  /koreader/event/ConfigChange/t_page_margin/100/&/SetPageTopMargin/100 	100
+  /koreader/event/ConfigChange/t_page_margin/140/&/SetPageTopMargin/140 	140
+下边距    (no effect on current application/document)
+  /koreader/event/ConfigChange/b_page_margin/5/&/SetPageBottomMargin/5 	5
+  /koreader/event/ConfigChange/b_page_margin/10/&/SetPageBottomMargin/10 	10
+  /koreader/event/ConfigChange/b_page_margin/15/&/SetPageBottomMargin/15 	15 (default)
+  /koreader/event/ConfigChange/b_page_margin/20/&/SetPageBottomMargin/20 	20
+  /koreader/event/ConfigChange/b_page_margin/30/&/SetPageBottomMargin/30 	30
+  /koreader/event/ConfigChange/b_page_margin/50/&/SetPageBottomMargin/50 	50
+  /koreader/event/ConfigChange/b_page_margin/70/&/SetPageBottomMargin/70 	70
+  /koreader/event/ConfigChange/b_page_margin/100/&/SetPageBottomMargin/100 	100
+  /koreader/event/ConfigChange/b_page_margin/140/&/SetPageBottomMargin/140 	140
+
+显示模式    (no effect on current application/document)
+  /koreader/event/ConfigChange/view_mode/0/&/SetViewMode/page 	分页
+  /koreader/event/ConfigChange/view_mode/1/&/SetViewMode/scroll 	连续
+渲染模式    (no effect on current application/document)
+  /koreader/event/ConfigChange/block_rendering_mode/0/&/SetBlockRenderingMode/0 	传统
+  /koreader/event/ConfigChange/block_rendering_mode/1/&/SetBlockRenderingMode/1 	平坦
+  /koreader/event/ConfigChange/block_rendering_mode/2/&/SetBlockRenderingMode/2 	书籍
+  /koreader/event/ConfigChange/block_rendering_mode/3/&/SetBlockRenderingMode/3 	网页
+缩放    (no effect on current application/document)
+  /koreader/event/ConfigChange/render_dpi/0/&/SetRenderDPI/0 	关闭 dpi
+  /koreader/event/ConfigChange/render_dpi/48/&/SetRenderDPI/48 	48 dpi
+  /koreader/event/ConfigChange/render_dpi/96/&/SetRenderDPI/96 	96¹’¹ dpi
+  /koreader/event/ConfigChange/render_dpi/167/&/SetRenderDPI/167 	167 dpi
+  /koreader/event/ConfigChange/render_dpi/212/&/SetRenderDPI/212 	212 dpi
+  /koreader/event/ConfigChange/render_dpi/300/&/SetRenderDPI/300 	300 dpi
+行间距    (no effect on current application/document)
+  /koreader/event/ConfigChange/line_spacing/70/&/SetLineSpace/70 	70 %
+  /koreader/event/ConfigChange/line_spacing/75/&/SetLineSpace/75 	75 %
+  /koreader/event/ConfigChange/line_spacing/80/&/SetLineSpace/80 	80 %
+  /koreader/event/ConfigChange/line_spacing/85/&/SetLineSpace/85 	85 %
+  /koreader/event/ConfigChange/line_spacing/90/&/SetLineSpace/90 	90 %
+  /koreader/event/ConfigChange/line_spacing/95/&/SetLineSpace/95 	95 %
+  /koreader/event/ConfigChange/line_spacing/100/&/SetLineSpace/100 	100 % (default)
+  /koreader/event/ConfigChange/line_spacing/105/&/SetLineSpace/105 	105 %
+  /koreader/event/ConfigChange/line_spacing/110/&/SetLineSpace/110 	110 %
+  /koreader/event/ConfigChange/line_spacing/115/&/SetLineSpace/115 	115 %
+  /koreader/event/ConfigChange/line_spacing/120/&/SetLineSpace/120 	120 %
+  /koreader/event/ConfigChange/line_spacing/125/&/SetLineSpace/125 	125 %
+  /koreader/event/ConfigChange/line_spacing/130/&/SetLineSpace/130 	130 %
+
+顶部状态栏    (no effect on current application/document)
+  /koreader/event/ConfigChange/status_line/1/&/SetStatusLine/1 	关闭
+  /koreader/event/ConfigChange/status_line/0/&/SetStatusLine/0 	开启
+内嵌样式    (no effect on current application/document)
+  /koreader/event/ConfigChange/embedded_css/0/&/ToggleEmbeddedStyleSheet/false 	关闭
+  /koreader/event/ConfigChange/embedded_css/1/&/ToggleEmbeddedStyleSheet/true 	开启
+内嵌字体    (no effect on current application/document)
+  /koreader/event/ConfigChange/embedded_fonts/0/&/ToggleEmbeddedFonts/false 	关闭
+  /koreader/event/ConfigChange/embedded_fonts/1/&/ToggleEmbeddedFonts/true 	开启
+图片缩放    (no effect on current application/document)
+  /koreader/event/ConfigChange/smooth_scaling/0/&/ToggleImageScaling/false 	快速
+  /koreader/event/ConfigChange/smooth_scaling/1/&/ToggleImageScaling/true 	最佳
+禁用图片反色    (no effect on current application/document)
+  /koreader/event/ConfigChange/nightmode_images/1/&/ToggleNightmodeImages/true 	开启
+  /koreader/event/ConfigChange/nightmode_images/0/&/ToggleNightmodeImages/false 	关闭
+
+固定排版文档 （pdf, djvu, pics…）
+开/关 快捷跳页
+  /koreader/event/TogglePageFlipping
+开/关 标记/取消书签
+  /koreader/event/ToggleBookmarkFlipping
+开/关 页面重排
+  /koreader/event/ToggleReflow
+缩放模式
+  /koreader/event/SetZoomMode/page 	分页 - 全部
+  /koreader/event/SetZoomMode/pagewidth 	分页 - 宽度
+  /koreader/event/SetZoomMode/pageheight 	分页 - 高度
+  /koreader/event/SetZoomMode/content 	内容 - 全部
+  /koreader/event/SetZoomMode/contentwidth 	内容 - 宽度
+  /koreader/event/SetZoomMode/contentheight 	内容 - 高度
+  /koreader/event/SetZoomMode/columns 	列数
+  /koreader/event/SetZoomMode/rows 	行数
+  /koreader/event/SetZoomMode/manual 	手动
+更改缩放比例
+  /koreader/event/ZoomFactorChange
+
+开/关 区块缩放
+  /koreader/event/TogglePanelZoomSetting
+
+页面切边
+  /koreader/event/ConfigChange/trim_page/3/&/PageCrop/none 	无
+  /koreader/event/ConfigChange/trim_page/1/&/PageCrop/auto 	自动
+  /koreader/event/ConfigChange/trim_page/2/&/PageCrop/semi-auto 	半自动
+  /koreader/event/ConfigChange/trim_page/0/&/PageCrop/manual 	手动
+边距
+  /koreader/event/ConfigChange/page_margin/0.05/&/MarginUpdate/0.05 	0.05
+  /koreader/event/ConfigChange/page_margin/0.1/&/MarginUpdate/0.1 	0.1
+  /koreader/event/ConfigChange/page_margin/0.25/&/MarginUpdate/0.25 	0.25
+  /koreader/event/ConfigChange/page_margin/0.4/&/MarginUpdate/0.4 	0.4
+  /koreader/event/ConfigChange/page_margin/0.55/&/MarginUpdate/0.55 	0.55
+  /koreader/event/ConfigChange/page_margin/0.7/&/MarginUpdate/0.7 	0.7
+  /koreader/event/ConfigChange/page_margin/0.85/&/MarginUpdate/0.85 	0.85
+  /koreader/event/ConfigChange/page_margin/1/&/MarginUpdate/1 	1
+水平重叠
+  /koreader/event/ConfigChange/zoom_overlap_h/0/&/DefineZoom/0 	0
+  /koreader/event/ConfigChange/zoom_overlap_h/12/&/DefineZoom/12 	12
+  /koreader/event/ConfigChange/zoom_overlap_h/24/&/DefineZoom/24 	24
+  /koreader/event/ConfigChange/zoom_overlap_h/36/&/DefineZoom/36 	36 (default)
+  /koreader/event/ConfigChange/zoom_overlap_h/48/&/DefineZoom/48 	48
+  /koreader/event/ConfigChange/zoom_overlap_h/60/&/DefineZoom/60 	60
+  /koreader/event/ConfigChange/zoom_overlap_h/72/&/DefineZoom/72 	72
+  /koreader/event/ConfigChange/zoom_overlap_h/84/&/DefineZoom/84 	84
+垂直重叠
+  /koreader/event/ConfigChange/zoom_overlap_v/0/&/DefineZoom/0 	0
+  /koreader/event/ConfigChange/zoom_overlap_v/12/&/DefineZoom/12 	12
+  /koreader/event/ConfigChange/zoom_overlap_v/24/&/DefineZoom/24 	24
+  /koreader/event/ConfigChange/zoom_overlap_v/36/&/DefineZoom/36 	36 (default)
+  /koreader/event/ConfigChange/zoom_overlap_v/48/&/DefineZoom/48 	48
+  /koreader/event/ConfigChange/zoom_overlap_v/60/&/DefineZoom/60 	60
+  /koreader/event/ConfigChange/zoom_overlap_v/72/&/DefineZoom/72 	72
+  /koreader/event/ConfigChange/zoom_overlap_v/84/&/DefineZoom/84 	84
+适应
+  /koreader/event/ConfigChange/zoom_mode_type/2/&/DefineZoom/full 	全部
+  /koreader/event/ConfigChange/zoom_mode_type/1/&/DefineZoom/width 	宽度
+  /koreader/event/ConfigChange/zoom_mode_type/0/&/DefineZoom/height 	高度
+缩放设置为
+  /koreader/event/ConfigChange/zoom_mode_genus/4/&/DefineZoom/page 	分页
+  /koreader/event/ConfigChange/zoom_mode_genus/3/&/DefineZoom/content 	内容
+  /koreader/event/ConfigChange/zoom_mode_genus/2/&/DefineZoom/columns 	列数
+  /koreader/event/ConfigChange/zoom_mode_genus/1/&/DefineZoom/rows 	行数
+  /koreader/event/ConfigChange/zoom_mode_genus/0/&/DefineZoom/manual 	手动
+页面分割的列数/行数
+  /koreader/event/ConfigChange/zoom_range_number/1/&/DefineZoom/1 	1
+  /koreader/event/ConfigChange/zoom_range_number/2/&/DefineZoom/2 	2
+  /koreader/event/ConfigChange/zoom_range_number/3/&/DefineZoom/3 	3
+  /koreader/event/ConfigChange/zoom_range_number/4/&/DefineZoom/4 	4
+  /koreader/event/ConfigChange/zoom_range_number/5/&/DefineZoom/5 	5
+  /koreader/event/ConfigChange/zoom_range_number/6/&/DefineZoom/6 	6
+  /koreader/event/ConfigChange/zoom_range_number/7/&/DefineZoom/7 	7
+  /koreader/event/ConfigChange/zoom_range_number/8/&/DefineZoom/8 	8
+缩放比例
+  /koreader/event/ConfigChange/zoom_factor/0.7/&/DefineZoom/0.7 	0.7
+  /koreader/event/ConfigChange/zoom_factor/1/&/DefineZoom/1 	1
+  /koreader/event/ConfigChange/zoom_factor/1.5/&/DefineZoom/1.5 	1.5
+  /koreader/event/ConfigChange/zoom_factor/2/&/DefineZoom/2 	2
+  /koreader/event/ConfigChange/zoom_factor/3/&/DefineZoom/3 	3
+  /koreader/event/ConfigChange/zoom_factor/5/&/DefineZoom/5 	5
+  /koreader/event/ConfigChange/zoom_factor/10/&/DefineZoom/10 	10
+  /koreader/event/ConfigChange/zoom_factor/20/&/DefineZoom/20 	20
+翻页方向
+  /koreader/event/ConfigChange/zoom_direction/7/&/DefineZoom/7 	从左到右，从上到下
+  /koreader/event/ConfigChange/zoom_direction/6/&/DefineZoom/6 	从上到下，从左到右
+  /koreader/event/ConfigChange/zoom_direction/5/&/DefineZoom/5 	从左到右，从下到上
+  /koreader/event/ConfigChange/zoom_direction/4/&/DefineZoom/4 	从下到上，从左到右
+  /koreader/event/ConfigChange/zoom_direction/3/&/DefineZoom/3 	从下到上，从右到左
+  /koreader/event/ConfigChange/zoom_direction/2/&/DefineZoom/2 	从右到左，从下到上
+  /koreader/event/ConfigChange/zoom_direction/1/&/DefineZoom/1 	从上到下，从右到左
+  /koreader/event/ConfigChange/zoom_direction/0/&/DefineZoom/0 	从右到左，从上到下
+显示模式
+  /koreader/event/ConfigChange/page_scroll/0/&/SetScrollMode/false 	分页
+  /koreader/event/ConfigChange/page_scroll/1/&/SetScrollMode/true 	连续
+页面间距
+  /koreader/event/ConfigChange/page_gap_height/0/&/PageGapUpdate/0 	0
+  /koreader/event/ConfigChange/page_gap_height/2/&/PageGapUpdate/2 	2
+  /koreader/event/ConfigChange/page_gap_height/4/&/PageGapUpdate/4 	4
+  /koreader/event/ConfigChange/page_gap_height/8/&/PageGapUpdate/8 	8
+  /koreader/event/ConfigChange/page_gap_height/16/&/PageGapUpdate/16 	16
+  /koreader/event/ConfigChange/page_gap_height/32/&/PageGapUpdate/32 	32
+  /koreader/event/ConfigChange/page_gap_height/64/&/PageGapUpdate/64 	64
+行间距
+  /koreader/event/ConfigChange/line_spacing/1 	小
+  /koreader/event/ConfigChange/line_spacing/1.2 	中
+  /koreader/event/ConfigChange/line_spacing/1.4 	大
+对齐方式
+  /koreader/event/ConfigChange/justification/-1 	自动
+  /koreader/event/ConfigChange/justification/0 	左
+  /koreader/event/ConfigChange/justification/1 	居中
+  /koreader/event/ConfigChange/justification/2 	右
+  /koreader/event/ConfigChange/justification/3 	两端对齐
+字号
+  /koreader/event/ConfigChange/font_size/0.2/&/FontSizeUpdate/0.2 	0.2
+  /koreader/event/ConfigChange/font_size/0.4/&/FontSizeUpdate/0.4 	0.4
+  /koreader/event/ConfigChange/font_size/0.5/&/FontSizeUpdate/0.5 	0.5
+  /koreader/event/ConfigChange/font_size/0.6/&/FontSizeUpdate/0.6 	0.6
+  /koreader/event/ConfigChange/font_size/0.7/&/FontSizeUpdate/0.7 	0.7
+  /koreader/event/ConfigChange/font_size/0.8/&/FontSizeUpdate/0.8 	0.8
+  /koreader/event/ConfigChange/font_size/0.9/&/FontSizeUpdate/0.9 	0.9
+  /koreader/event/ConfigChange/font_size/1/&/FontSizeUpdate/1 	1
+  /koreader/event/ConfigChange/font_size/1.1/&/FontSizeUpdate/1.1 	1.1
+  /koreader/event/ConfigChange/font_size/1.3/&/FontSizeUpdate/1.3 	1.3
+  /koreader/event/ConfigChange/font_size/1.6/&/FontSizeUpdate/1.6 	1.6
+  /koreader/event/ConfigChange/font_size/2/&/FontSizeUpdate/2 	2
+调整字号
+  /koreader/event/ConfigChange/font_fine_tune/-0.05/&/FineTuningFontSize/-0.05 	减小
+  /koreader/event/ConfigChange/font_fine_tune/0.05/&/FineTuningFontSize/0.05 	增加
+字符间距
+  /koreader/event/ConfigChange/word_spacing/0.05 	小
+  /koreader/event/ConfigChange/word_spacing/-0.2 	自动
+  /koreader/event/ConfigChange/word_spacing/0.375 	大
+页面重排
+  /koreader/event/ConfigChange/text_wrap/0/&/ReflowUpdated/0 	关闭
+  /koreader/event/ConfigChange/text_wrap/1/&/ReflowUpdated/1 	开启
+对比度
+  /koreader/event/ConfigChange/contrast/0.8/&/GammaUpdate/0.8 	0.8
+  /koreader/event/ConfigChange/contrast/1/&/GammaUpdate/1 	1
+  /koreader/event/ConfigChange/contrast/1.5/&/GammaUpdate/1.5 	1.5
+  /koreader/event/ConfigChange/contrast/2/&/GammaUpdate/2 	2
+  /koreader/event/ConfigChange/contrast/4/&/GammaUpdate/4 	4
+  /koreader/event/ConfigChange/contrast/6/&/GammaUpdate/6 	6
+  /koreader/event/ConfigChange/contrast/10/&/GammaUpdate/10 	10
+  /koreader/event/ConfigChange/contrast/50/&/GammaUpdate/50 	50
+去水印
+  /koreader/event/ConfigChange/page_opt/0 	关闭
+  /koreader/event/ConfigChange/page_opt/1 	开启
+抖动
+  /koreader/event/ConfigChange/sw_dithering/0/&/SWDitheringUpdate/false 	关闭
+  /koreader/event/ConfigChange/sw_dithering/1/&/SWDitheringUpdate/true 	开启
+渲染质量
+  /koreader/event/ConfigChange/quality/0.5 	低
+  /koreader/event/ConfigChange/quality/1 	默认
+  /koreader/event/ConfigChange/quality/1.5 	高
+文档语言
+强制 OCR
+  /koreader/event/ConfigChange/forced_ocr/0 	关闭
+  /koreader/event/ConfigChange/forced_ocr/1 	开启
+文字方向
+  /koreader/event/ConfigChange/writing_direction/0 	左至右
+  /koreader/event/ConfigChange/writing_direction/1 	右至左
+  /koreader/event/ConfigChange/writing_direction/2 	竖排，从右至左
+文档列数
+  /koreader/event/ConfigChange/max_columns/1 	1
+  /koreader/event/ConfigChange/max_columns/2 	2
+  /koreader/event/ConfigChange/max_columns/3 	3
+自动校直
+  /koreader/event/ConfigChange/auto_straighten/0/&/DummyEvent/0 	0 ° (default)
+  /koreader/event/ConfigChange/auto_straighten/5/&/DummyEvent/5 	5 °
+  /koreader/event/ConfigChange/auto_straighten/10/&/DummyEvent/10 	10 °
+  /koreader/event/ConfigChange/auto_straighten/15/&/DummyEvent/15 	15 °
+  /koreader/event/ConfigChange/auto_straighten/25/&/DummyEvent/25 	25 °
+Set auto enable dual page mode
+  /koreader/event/SetAutoEnableDualPageMode/true 	开启
+  /koreader/event/SetAutoEnableDualPageMode/false 	关闭
+Toggle dual page mode
+  /koreader/event/ToggleDualPageMode
+Set page mode
+  /koreader/event/SetPageMode/1 	single
+  /koreader/event/SetPageMode/2 	dual
+Set dual page mode first page is cover
+  /koreader/event/SetDualPageModeFirstPageIsCover/true 	开启
+  /koreader/event/SetDualPageModeFirstPageIsCover/false 	关闭
+Set dual page mode RTL
+  /koreader/event/SetDualPageModeRTL/true 	开启
+  /koreader/event/SetDualPageModeRTL/false 	关闭
+
+
+
+
