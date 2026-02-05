@@ -9,11 +9,14 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Free Disk Space
+        uses: jlumbroso/free-disk-space-action@v1.3.1
 
       - name: Build with Buildozer
         uses: ArtemSBulgakov/buildozer-action@v1
@@ -21,7 +24,7 @@ jobs:
         with:
           workdir: Android_Kivy
           command: buildozer android debug
-          buildozer_version: master
+          buildozer_version: stable
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4

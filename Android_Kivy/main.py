@@ -51,7 +51,17 @@ class KOReaderApp(App):
         self.store = JsonStore('koreader_config.json')
         self.base_url = ""
         self.connected = False
-        self.current_theme_name = self.store.get('theme')['name'] if self.store.exists('theme') else 'light'
+        try:
+            if self.store.exists('theme'):
+                theme_data = self.store.get('theme')
+                if isinstance(theme_data, dict):
+                    self.current_theme_name = theme_data.get('name', 'light')
+                else:
+                    self.current_theme_name = 'light'
+            else:
+                self.current_theme_name = 'light'
+        except Exception:
+            self.current_theme_name = 'light'
         self.rotation_state = 0
         
         # 屏幕管理器
