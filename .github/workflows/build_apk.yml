@@ -38,7 +38,7 @@ jobs:
       - name: Install Buildozer and dependencies
         run: |
           pip install --upgrade pip wheel setuptools
-          pip install --upgrade buildozer cython virtualenv
+          pip install --upgrade buildozer "cython<3" virtualenv
 
       - name: Build APK
         working-directory: Android_Kivy
