@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / Builds
+build/
+dist/
+*.spec
+*.exe
+
+# Project Specific
+koreader_config.json
+screenshots/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
