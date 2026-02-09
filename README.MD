@@ -20,7 +20,7 @@
 **KOReader Remote Control** is a lightweight desktop application designed to control your e-reader running [KOReader](https://github.com/koreader/koreader) over a local network. It allows you to turn pages, refresh the screen, rotate the display, and take screenshots directly from your PC.
 
 ### Features
-- **Remote Page Turning**: Control page navigation using buttons, arrow keys, or mouse wheel.
+- **Remote Page Turning**: Control page navigation using buttons, arrow keys, mouse wheel, or **Xbox Controller**.
 - **Connection Management**: Connect to your device via its IP address.
 - **Screen Controls**:
   - ⟳ **Rotate Screen**: Toggle between portrait and landscape modes.
@@ -36,7 +36,7 @@
 1. Ensure you have Python 3.x installed.
 2. Install the required dependencies:
    ```bash
-   pip install requests
+   pip install requests pygame
    ```
 3. (Optional) If you want to build the executable yourself:
    ```bash
@@ -63,6 +63,50 @@
 | `Mouse Wheel` | Scroll Pages |
 | `Esc` | Suspend Device |
 
+### Gamepad Controls (Xbox)
+| Button | Action |
+| :--- | :--- |
+| `D-Pad Up` / `Right` | Next Page |
+| `D-Pad Down` / `Left` | Previous Page |
+| `Y` | Rotate Screen |
+| `X` | Full Refresh |
+| `A` | Screenshot |
+| `B` | Suspend Device |
+| `Start` | Disconnect |
+
+### Customizing Controls
+The key mapping is stored in `koreader_config.json`, which is generated after the first run. You can modify it to customize your controls.
+
+**Example `gamepad_mapping` in `koreader_config.json`:**
+```json
+"gamepad_mapping": {
+    "next_page": ["DPAD_UP", "DPAD_RIGHT"],
+    "previous_page": ["DPAD_DOWN", "DPAD_LEFT"],
+    "rotate": ["Y", "BTN_3"],
+    "refresh": ["X", "BTN_2"],
+    "screenshot": ["A", "BTN_0"],
+    "suspend": ["B", "BTN_1"],
+    "disconnect": ["START", "BTN_7"]
+}
+```
+
+**Supported Keys:**
+You can use either the alias (Recommended) or the raw button ID.
+
+| Button | Alias | ID Code |
+| :--- | :--- | :--- |
+| **A** | `"A"` | `"BTN_0"` |
+| **B** | `"B"` | `"BTN_1"` |
+| **X** | `"X"` | `"BTN_2"` |
+| **Y** | `"Y"` | `"BTN_3"` |
+| **LB** | `"LB"` | `"BTN_4"` |
+| **RB** | `"RB"` | `"BTN_5"` |
+| **Back/View** | `"BACK"` | `"BTN_6"` |
+| **Start/Menu** | `"START"` | `"BTN_7"` |
+| **Left Stick Click** | - | `"BTN_8"` |
+| **Right Stick Click** | - | `"BTN_9"` |
+| **D-Pad** | `"DPAD_UP"`, `"DPAD_DOWN"`, `"DPAD_LEFT"`, `"DPAD_RIGHT"` | |
+
 ---
 
 <div id="chinese"></div>
@@ -73,7 +117,7 @@
 **KOReader 翻页助手** 是一款轻量级的桌面应用程序，旨在通过局域网控制运行 [KOReader](https://github.com/koreader/koreader) 的电子书阅读器。它允许您在电脑上进行翻页、刷新屏幕、旋转屏幕以及截图等操作。
 
 ### 功能特性
-- **远程翻页**: 使用按钮、方向键或鼠标滚轮控制页面翻页。
+- **远程翻页**: 使用按钮、方向键、鼠标滚轮或 **Xbox 手柄** 控制页面翻页。
 - **连接管理**: 通过 IP 地址连接设备。
 - **屏幕控制**:
   - ⟳ **屏幕旋转**: 在横屏和竖屏模式之间切换。
@@ -89,7 +133,7 @@
 1. 确保已安装 Python 3.x。
 2. 安装必要的依赖库：
    ```bash
-   pip install requests
+   pip install requests pygame
    ```
 3. (可选) 如果您想自己打包成 exe 文件：
    ```bash
@@ -115,6 +159,50 @@
 | `→` / `↓` / `PageDown` | 下一页 |
 | `鼠标滚轮` | 翻页 |
 | `Esc` | 设备休眠 |
+
+### 手柄控制 (Xbox)
+| 按键 | 功能 |
+| :--- | :--- |
+| `十字键 上` / `右` | 下一页 |
+| `十字键 下` / `左` | 上一页 |
+| `Y` | 旋转屏幕 |
+| `X` | 全刷屏幕 |
+| `A` | 屏幕截图 |
+| `B` | 设备休眠 |
+| `Start` | 断开连接 |
+
+### 自定义按键配置
+程序首次运行后，会在同目录下生成 `koreader_config.json` 文件。您可以打开该文件修改 `gamepad_mapping` 部分来自定义按键。
+
+**配置示例:**
+```json
+"gamepad_mapping": {
+    "next_page": ["DPAD_UP", "DPAD_RIGHT"],  // 下一页
+    "previous_page": ["DPAD_DOWN", "DPAD_LEFT"], // 上一页
+    "rotate": ["Y", "BTN_3"],    // 旋转
+    "refresh": ["X", "BTN_2"],   // 刷新
+    "screenshot": ["A", "BTN_0"], // 截图
+    "suspend": ["B", "BTN_1"],   // 休眠
+    "disconnect": ["START"]      // 断开
+}
+```
+
+**支持的按键代码:**
+推荐直接使用双引号包裹的别名（如 `"A"`, `"START"`），也可以使用原始 ID。
+
+| Xbox 按键 | 别名 (推荐) | 原始 ID 代码 |
+| :--- | :--- | :--- |
+| **A** | `"A"` | `"BTN_0"` |
+| **B** | `"B"` | `"BTN_1"` |
+| **X** | `"X"` | `"BTN_2"` |
+| **Y** | `"Y"` | `"BTN_3"` |
+| **LB (左肩键)** | `"LB"` | `"BTN_4"` |
+| **RB (右肩键)** | `"RB"` | `"BTN_5"` |
+| **Back / View** | `"BACK"` | `"BTN_6"` |
+| **Start / Menu** | `"START"` | `"BTN_7"` |
+| **左摇杆按下** | - | `"BTN_8"` |
+| **右摇杆按下** | - | `"BTN_9"` |
+| **十字键** | `"DPAD_UP"`, `"DPAD_DOWN"`, `"DPAD_LEFT"`, `"DPAD_RIGHT"` | |
 
 ---
 <div align="center">

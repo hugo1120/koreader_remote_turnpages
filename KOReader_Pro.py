@@ -8,6 +8,7 @@ import sys
 import sys
 import shutil
 from datetime import datetime
+import pygame
 
 def resource_path(relative_path):
     """ Get absolute path to resource, works for dev and for PyInstaller """
@@ -53,6 +54,16 @@ THEMES = {
         "theme_icon_color": "#FFFFFF", # 深色模式下图标为白色
         "danger": "#FF5252"        # 红色
     }
+}
+
+DEFAULT_GAMEPAD_MAPPING = {
+    "next_page": ["DPAD_UP", "DPAD_RIGHT"],
+    "previous_page": ["DPAD_DOWN", "DPAD_LEFT"],
+    "rotate": ["Y", "BTN_3"],    # Xbox Y usually button 3 or 4 depending on driver
+    "refresh": ["X", "BTN_2"],   # Xbox X usually button 2
+    "screenshot": ["A", "BTN_0"],# Xbox A usually button 0
+    "suspend": ["B", "BTN_1"],   # Xbox B usually button 1
+    "disconnect": ["START", "BTN_7", "BTN_6"] # Start/Menu
 }
 
 CONFIG_FILE = 'koreader_config.json'
@@ -101,6 +112,12 @@ class KOReaderRemoteApp:
         
         # 窗口大小变化时保存配置
         self.root.bind('<Configure>', self.on_window_configure)
+        self.root.protocol("WM_DELETE_WINDOW", self.on_close)
+        
+        # === 手柄初始化 ===
+        self.gamepad_running = True
+        self.gamepad_thread = threading.Thread(target=self.gamepad_poll_loop, daemon=True)
+        self.gamepad_thread.start()
         
         # === 键盘绑定 ===
         self.root.bind('<Prior>', lambda e: self.previous_page())
@@ -308,22 +325,26 @@ class KOReaderRemoteApp:
                     self.ip_var.set(self.config.get('last_ip', ''))
                     self.current_theme = self.config.get('theme', 'light')
                     self.always_on_top = self.config.get('always_on_top', False)
+                    self.gamepad_mapping = self.config.get('gamepad_mapping', DEFAULT_GAMEPAD_MAPPING)
             except: 
                 self.current_theme = "light"
                 self.always_on_top = False
+                self.gamepad_mapping = DEFAULT_GAMEPAD_MAPPING
         else: 
             self.current_theme = "light"
             self.always_on_top = False
+            self.gamepad_mapping = DEFAULT_GAMEPAD_MAPPING
 
     def save_config(self):
         try:
             self.config['last_ip'] = self.ip_var.get().strip()
             self.config['theme'] = self.current_theme
             self.config['always_on_top'] = self.always_on_top
+            self.config['gamepad_mapping'] = getattr(self, 'gamepad_mapping', DEFAULT_GAMEPAD_MAPPING)
             self.config['window_width'] = self.root.winfo_width()
             self.config['window_height'] = self.root.winfo_height()
-            with open(CONFIG_FILE, 'w') as f:
-                json.dump(self.config, f)
+            with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
+                json.dump(self.config, f, indent=4, ensure_ascii=False)
         except: pass
     
     def toggle_always_on_top(self):
@@ -487,6 +508,86 @@ class KOReaderRemoteApp:
         color = t['danger'] if is_error else t['fg_secondary']
         time = datetime.now().strftime("%H:%M:%S")
         self.lbl_status.config(text=f"{time} - {text}", fg=color)
+
+    def gamepad_poll_loop(self):
+        """手柄轮询线程"""
+        pygame.init()
+        pygame.joystick.init()
+        
+        # 记录上一次的 hat 状态，防止重复触发
+        last_hat_state = (0, 0)
+        
+        while self.gamepad_running:
+            try:
+                # 处理 Pygame 事件队列
+                for event in pygame.event.get():
+                    if event.type == pygame.JOYDEVICEADDED:
+                         # 重新扫描手柄
+                        pygame.joystick.quit()
+                        pygame.joystick.init()
+                        if pygame.joystick.get_count() > 0:
+                            js = pygame.joystick.Joystick(0)
+                            js.init()
+                            self.root.after(0, lambda: self.show_log(f"已连接手柄: {js.get_name()}"))
+                    
+                    elif event.type == pygame.JOYDEVICEREMOVED:
+                        self.root.after(0, lambda: self.show_log("手柄已断开"))
+
+                    elif event.type == pygame.JOYBUTTONDOWN:
+                        # event.button 是按钮索引 (0, 1, 2...)
+                        # 查找映射功能
+                        self.handle_gamepad_input("BTN_" + str(event.button))
+                        
+                        # 同时也映射标准 Xbox 按钮名 (简化处理)
+                        # 这里简单硬编码常见 A/B/X/Y 对应关系以便调试，实际依赖配置
+                        xbox_map = {0:"A", 1:"B", 2:"X", 3:"Y", 4:"LB", 5:"RB", 6:"BACK", 7:"START"}
+                        if event.button in xbox_map:
+                             self.handle_gamepad_input(xbox_map[event.button])
+
+                    elif event.type == pygame.JOYHATMOTION:
+                        # event.value 是元组 (x, y), x/y 为 -1, 0, 1
+                        # D-Pad 上: (0, 1), 下: (0, -1), 左: (-1, 0), 右: (1, 0)
+                        hat_val = event.value
+                        if hat_val != last_hat_state:
+                            if hat_val == (0, 1): self.handle_gamepad_input("DPAD_UP")
+                            elif hat_val == (0, -1): self.handle_gamepad_input("DPAD_DOWN")
+                            elif hat_val == (-1, 0): self.handle_gamepad_input("DPAD_LEFT")
+                            elif hat_val == (1, 0): self.handle_gamepad_input("DPAD_RIGHT")
+                            last_hat_state = hat_val
+                
+                # 如果没有事件驱动，也可以手动轮询，但 event 获取更高效
+                if pygame.joystick.get_count() == 0:
+                    # 尝试重新初始化检测
+                    pass
+
+            except Exception as e:
+                print(f"Gamepad error: {e}")
+            
+            pygame.time.wait(50) # 50ms 轮询间隔
+
+    def handle_gamepad_input(self, key_code):
+        """处理映射后的手柄按键"""
+        # 遍历映射配置，找到对应的功能
+        cmd = None
+        for action, keys in self.gamepad_mapping.items():
+            if key_code in keys:
+                cmd = action
+                break
+        
+        if cmd:
+            # 在主线程执行对应操作
+            if cmd == "next_page": self.root.after(0, self.next_page)
+            elif cmd == "previous_page": self.root.after(0, self.previous_page)
+            elif cmd == "rotate": self.root.after(0, self.rotate_device)
+            elif cmd == "refresh": self.root.after(0, self.full_refresh)
+            elif cmd == "screenshot": self.root.after(0, self.take_screenshot)
+            elif cmd == "suspend": self.root.after(0, self.suspend_device)
+            elif cmd == "disconnect": self.root.after(0, self.disconnect)
+
+    def on_close(self):
+        self.gamepad_running = False
+        self.root.destroy()
+        sys.exit(0)
 
 def main():
     root = tk.Tk()

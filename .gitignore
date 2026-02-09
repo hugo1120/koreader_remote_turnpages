@@ -1,19 +1,29 @@
-# Python
+# Python / Cache
 __pycache__/
 *.py[cod]
 *$py.class
+*.log
 
 # Distribution / Builds
 build/
 dist/
 *.spec
 *.exe
+*.manifest
 
-# Project Specific
+# Environments
+.venv/
+env/
+venv/
+ENV/
+
+# Project Specific (Runtime generated)
 koreader_config.json
 screenshots/
 
-# IDEs
+# IDEs / Editor
 .vscode/
 .idea/
 *.swp
+*.swo
+
