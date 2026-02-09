@@ -66,8 +66,8 @@
 ### Gamepad Controls (Xbox)
 | Button | Action |
 | :--- | :--- |
-| `D-Pad Up` / `Right` | Next Page |
-| `D-Pad Down` / `Left` | Previous Page |
+| `D-Pad Down` / `Right` | Next Page |
+| `D-Pad Up` / `Left` | Previous Page |
 | `Y` | Rotate Screen |
 | `X` | Full Refresh |
 | `A` | Screenshot |
@@ -80,8 +80,8 @@ The key mapping is stored in `koreader_config.json`, which is generated after th
 **Example `gamepad_mapping` in `koreader_config.json`:**
 ```json
 "gamepad_mapping": {
-    "next_page": ["DPAD_UP", "DPAD_RIGHT"],
-    "previous_page": ["DPAD_DOWN", "DPAD_LEFT"],
+    "next_page": ["DPAD_DOWN", "DPAD_RIGHT"],
+    "previous_page": ["DPAD_UP", "DPAD_LEFT"],
     "rotate": ["Y", "BTN_3"],
     "refresh": ["X", "BTN_2"],
     "screenshot": ["A", "BTN_0"],
@@ -163,8 +163,8 @@ You can use either the alias (Recommended) or the raw button ID.
 ### 手柄控制 (Xbox)
 | 按键 | 功能 |
 | :--- | :--- |
-| `十字键 上` / `右` | 下一页 |
-| `十字键 下` / `左` | 上一页 |
+| `十字键 下` / `右` | 下一页 |
+| `十字键 上` / `左` | 上一页 |
 | `Y` | 旋转屏幕 |
 | `X` | 全刷屏幕 |
 | `A` | 屏幕截图 |
@@ -177,8 +177,8 @@ You can use either the alias (Recommended) or the raw button ID.
 **配置示例:**
 ```json
 "gamepad_mapping": {
-    "next_page": ["DPAD_UP", "DPAD_RIGHT"],  // 下一页
-    "previous_page": ["DPAD_DOWN", "DPAD_LEFT"], // 上一页
+    "next_page": ["DPAD_DOWN", "DPAD_RIGHT"],  // 下一页
+    "previous_page": ["DPAD_UP", "DPAD_LEFT"], // 上一页
     "rotate": ["Y", "BTN_3"],    // 旋转
     "refresh": ["X", "BTN_2"],   // 刷新
     "screenshot": ["A", "BTN_0"], // 截图

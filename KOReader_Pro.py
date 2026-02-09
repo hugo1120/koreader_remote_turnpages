@@ -57,13 +57,13 @@ THEMES = {
 }
 
 DEFAULT_GAMEPAD_MAPPING = {
-    "next_page": ["DPAD_UP", "DPAD_RIGHT"],
-    "previous_page": ["DPAD_DOWN", "DPAD_LEFT"],
-    "rotate": ["Y", "BTN_3"],    # Xbox Y usually button 3 or 4 depending on driver
-    "refresh": ["X", "BTN_2"],   # Xbox X usually button 2
-    "screenshot": ["A", "BTN_0"],# Xbox A usually button 0
-    "suspend": ["B", "BTN_1"],   # Xbox B usually button 1
-    "disconnect": ["START", "BTN_7", "BTN_6"] # Start/Menu
+    "next_page": ["DPAD_DOWN", "DPAD_RIGHT"],    # 下一页: 下 / 右
+    "previous_page": ["DPAD_UP", "DPAD_LEFT"],   # 上一页: 上 / 左
+    "rotate": ["Y", "BTN_3"],
+    "refresh": ["X", "BTN_2"],
+    "screenshot": ["A", "BTN_0"],
+    "suspend": ["B", "BTN_1"],
+    "disconnect": ["START", "BTN_7", "BTN_6"]
 }
 
 CONFIG_FILE = 'koreader_config.json'
@@ -144,6 +144,16 @@ class KOReaderRemoteApp:
         self.title_bar.pack_propagate(False)
         
         # 标题文字已移除
+        
+        # === 手柄状态指示灯 ===
+        # 在最左侧添加一个指示灯
+        self.canvas_gamepad_status = tk.Canvas(self.title_bar, width=14, height=14, 
+                                               bg=THEMES[self.current_theme]['panel_bg'], 
+                                               highlightthickness=0)
+        self.canvas_gamepad_status.pack(side=tk.LEFT, padx=(5, 1))
+        # 初始绘制红色圆点
+        self.status_light = self.canvas_gamepad_status.create_oval(3, 3, 11, 11, fill="#FF5252", outline="")
+        self.update_gamepad_status(False) # 初始状态: 未连接
         
         # 主题切换按钮
         self.btn_theme = tk.Button(self.title_bar, text="☾", font=("Arial", 14),
@@ -278,6 +288,9 @@ class KOReaderRemoteApp:
         self.btn_theme.configure(bg=t['panel_bg'], fg=t['theme_icon_color'], 
                                  activebackground=t['panel_bg'], activeforeground=t['theme_icon_color'])
         self.btn_theme.config(text="☾" if self.current_theme == "light" else "☀")
+
+        # 3.1 状态灯背景
+        self.canvas_gamepad_status.configure(bg=t['panel_bg'])
         
         # 4. 图钉按钮
         pin_color = t['btn_primary'] if self.always_on_top else t['theme_icon_color']
@@ -326,7 +339,13 @@ class KOReaderRemoteApp:
                     self.current_theme = self.config.get('theme', 'light')
                     self.always_on_top = self.config.get('always_on_top', False)
                     self.gamepad_mapping = self.config.get('gamepad_mapping', DEFAULT_GAMEPAD_MAPPING)
-            except: 
+                    print(f"配置文件加载成功: {CONFIG_FILE}")
+            except Exception as e: 
+                print(f"加载配置文件失败: {e}")
+                # 如果是 JSON 格式错误，提示用户
+                if isinstance(e, json.JSONDecodeError):
+                    messagebox.showerror("配置错误", f"配置文件格式错误，无法加载。\n请检查 JSON 语法。\n\n错误信息: {e}")
+                
                 self.current_theme = "light"
                 self.always_on_top = False
                 self.gamepad_mapping = DEFAULT_GAMEPAD_MAPPING
@@ -509,10 +528,34 @@ class KOReaderRemoteApp:
         time = datetime.now().strftime("%H:%M:%S")
         self.lbl_status.config(text=f"{time} - {text}", fg=color)
 
+        time = datetime.now().strftime("%H:%M:%S")
+        self.lbl_status.config(text=f"{time} - {text}", fg=color)
+
+    def update_gamepad_status(self, connected):
+        """更新手柄状态指示灯"""
+        color = "#4CAF50" if connected else "#FF5252" # 绿 / 红
+        try:
+            self.canvas_gamepad_status.itemconfig(self.status_light, fill=color)
+        except: pass
+
     def gamepad_poll_loop(self):
-        """手柄轮询线程"""
-        pygame.init()
-        pygame.joystick.init()
+        """手柄轮询线程 (稳定版)"""
+        try:
+            pygame.init()
+            pygame.joystick.init()
+            print("Pygame 模块初始化完成")
+        except Exception as e:
+            print(f"Pygame 初始化失败: {e}")
+            return
+
+        # 初始检测
+        if pygame.joystick.get_count() > 0:
+            try:
+                js = pygame.joystick.Joystick(0)
+                js.init()
+                self.root.after(0, lambda: self.update_gamepad_status(True))
+                print(f"初始连接手柄: {js.get_name()}")
+            except: pass
         
         # 记录上一次的 hat 状态，防止重复触发
         last_hat_state = (0, 0)
@@ -522,31 +565,53 @@ class KOReaderRemoteApp:
                 # 处理 Pygame 事件队列
                 for event in pygame.event.get():
                     if event.type == pygame.JOYDEVICEADDED:
-                         # 重新扫描手柄
-                        pygame.joystick.quit()
-                        pygame.joystick.init()
-                        if pygame.joystick.get_count() > 0:
-                            js = pygame.joystick.Joystick(0)
+                        # 新手柄插入
+                        try:
+                            js = pygame.joystick.Joystick(event.device_index)
                             js.init()
-                            self.root.after(0, lambda: self.show_log(f"已连接手柄: {js.get_name()}"))
+                            self.root.after(0, lambda: self.update_gamepad_status(True))
+                            print(f"手柄已连接: {js.get_name()}")
+                        except Exception as e:
+                            print(f"手柄初始化失败: {e}")
                     
                     elif event.type == pygame.JOYDEVICEREMOVED:
-                        self.root.after(0, lambda: self.show_log("手柄已断开"))
+                        # 手柄拔出
+                        # 检查是否还有其他手柄
+                        if pygame.joystick.get_count() == 0:
+                            self.root.after(0, lambda: self.update_gamepad_status(False))
+                            print("手柄已断开")
 
                     elif event.type == pygame.JOYBUTTONDOWN:
-                        # event.button 是按钮索引 (0, 1, 2...)
-                        # 查找映射功能
-                        self.handle_gamepad_input("BTN_" + str(event.button))
+                        # 收集该按钮对应的所有键码
+                        keys_pressed = ["BTN_" + str(event.button)]
                         
-                        # 同时也映射标准 Xbox 按钮名 (简化处理)
-                        # 这里简单硬编码常见 A/B/X/Y 对应关系以便调试，实际依赖配置
                         xbox_map = {0:"A", 1:"B", 2:"X", 3:"Y", 4:"LB", 5:"RB", 6:"BACK", 7:"START"}
                         if event.button in xbox_map:
-                             self.handle_gamepad_input(xbox_map[event.button])
+                             keys_pressed.append(xbox_map[event.button])
+                        
+                        print(f"手柄按键按下: ID={event.button}, Keys={keys_pressed}")
+
+                        # 查找映射功能 (防止重复触发)
+                        triggered_action = None
+                        for action, mapped_keys in self.gamepad_mapping.items():
+                            # 检查是否命中了该 action 的任意一个绑定键
+                            if any(k in mapped_keys for k in keys_pressed):
+                                triggered_action = action
+                                break
+                        
+                        if triggered_action:
+                            print(f"-> 触发功能: {triggered_action}")
+                            if triggered_action == "next_page": self.root.after(0, self.next_page)
+                            elif triggered_action == "previous_page": self.root.after(0, self.previous_page)
+                            elif triggered_action == "rotate": self.root.after(0, self.rotate_device)
+                            elif triggered_action == "refresh": self.root.after(0, self.full_refresh)
+                            elif triggered_action == "screenshot": self.root.after(0, self.take_screenshot)
+                            elif triggered_action == "suspend": self.root.after(0, self.suspend_device)
+                            elif triggered_action == "disconnect": self.root.after(0, self.disconnect)
+                        else:
+                            print("-> 未绑定功能")
 
                     elif event.type == pygame.JOYHATMOTION:
-                        # event.value 是元组 (x, y), x/y 为 -1, 0, 1
-                        # D-Pad 上: (0, 1), 下: (0, -1), 左: (-1, 0), 右: (1, 0)
                         hat_val = event.value
                         if hat_val != last_hat_state:
                             if hat_val == (0, 1): self.handle_gamepad_input("DPAD_UP")
@@ -555,15 +620,10 @@ class KOReaderRemoteApp:
                             elif hat_val == (1, 0): self.handle_gamepad_input("DPAD_RIGHT")
                             last_hat_state = hat_val
                 
-                # 如果没有事件驱动，也可以手动轮询，但 event 获取更高效
-                if pygame.joystick.get_count() == 0:
-                    # 尝试重新初始化检测
-                    pass
-
             except Exception as e:
-                print(f"Gamepad error: {e}")
+                print(f"Gamepad loop error: {e}")
             
-            pygame.time.wait(50) # 50ms 轮询间隔
+            pygame.time.wait(10) # 10ms 轮询间隔
 
     def handle_gamepad_input(self, key_code):
         """处理映射后的手柄按键"""
