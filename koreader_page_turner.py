@@ -1,14 +1,19 @@
-import tkinter as tk
-from tkinter import messagebox, ttk
-import requests
-import threading
 import json
 import os
 import sys
-import sys
-import shutil
+import threading
+import tkinter as tk
+from ctypes import byref, c_int, sizeof, windll
 from datetime import datetime
-import pygame
+from tkinter import messagebox
+
+import requests
+
+try:
+    import pygame
+except Exception as exc:
+    pygame = None
+    PYGAME_IMPORT_ERROR = exc
 
 def resource_path(relative_path):
     """ Get absolute path to resource, works for dev and for PyInstaller """
@@ -16,9 +21,15 @@ def resource_path(relative_path):
         # PyInstaller creates a temp folder and stores path in _MEIPASS
         base_path = sys._MEIPASS
     except Exception:
-        base_path = os.path.abspath(".")
+        base_path = os.path.dirname(os.path.abspath(__file__))
 
     return os.path.join(base_path, relative_path)
+
+
+def get_app_dir():
+    if getattr(sys, "frozen", False):
+        return os.path.dirname(os.path.abspath(sys.executable))
+    return os.path.dirname(os.path.abspath(__file__))
 
 # --- 配色方案 (极简风) ---
 THEMES = {
@@ -66,19 +77,107 @@ DEFAULT_GAMEPAD_MAPPING = {
     "disconnect": ["START", "BTN_7", "BTN_6"]
 }
 
-CONFIG_FILE = 'koreader_config.json'
+APP_NAME = "KOReader Page Turner"
+APP_ID = "Hugo.KOReaderPageTurner"
+APP_DIR = get_app_dir()
+CONFIG_FILE = os.path.join(APP_DIR, 'koreader_config.json')
+SCREENSHOTS_DIR = os.path.join(APP_DIR, "screenshots")
+ICON_PATH = resource_path("logo.ico")
+ICON_PNG_PATH = resource_path("logo.png")
+
+WM_SETICON = 0x0080
+ICON_SMALL = 0
+ICON_BIG = 1
+IMAGE_ICON = 1
+LR_LOADFROMFILE = 0x0010
+LR_DEFAULTSIZE = 0x0040
+DWMWA_USE_IMMERSIVE_DARK_MODE = 20
+DWMWA_USE_IMMERSIVE_DARK_MODE_BEFORE_20H1 = 19
+DWMWA_CAPTION_COLOR = 35
+DWMWA_TEXT_COLOR = 36
+DWMWA_BORDER_COLOR = 34
+DWMWA_COLOR_DEFAULT = 0xFFFFFFFF
+
+
+def set_windows_app_id():
+    if sys.platform != "win32":
+        return
+
+    try:
+        windll.shell32.SetCurrentProcessExplicitAppUserModelID(APP_ID)
+    except Exception:
+        pass
+
+
+def get_native_window_handle(window):
+    try:
+        window.update_idletasks()
+        return windll.user32.GetParent(window.winfo_id()) or window.winfo_id()
+    except Exception:
+        return 0
+
+
+def apply_native_window_icon(window):
+    if sys.platform != "win32":
+        return
+
+    set_windows_app_id()
+
+    try:
+        window.iconbitmap(ICON_PATH)
+    except Exception:
+        pass
+
+    try:
+        window._icon_photo = tk.PhotoImage(file=ICON_PNG_PATH)
+        window.iconphoto(True, window._icon_photo)
+    except Exception:
+        pass
+
+    try:
+        hwnd = get_native_window_handle(window)
+        if not hwnd:
+            return
+        hicon_small = windll.user32.LoadImageW(0, ICON_PATH, IMAGE_ICON, 16, 16, LR_LOADFROMFILE)
+        hicon_big = windll.user32.LoadImageW(0, ICON_PATH, IMAGE_ICON, 32, 32, LR_LOADFROMFILE | LR_DEFAULTSIZE)
+        if hicon_small:
+            windll.user32.SendMessageW(hwnd, WM_SETICON, ICON_SMALL, hicon_small)
+        if hicon_big:
+            windll.user32.SendMessageW(hwnd, WM_SETICON, ICON_BIG, hicon_big)
+        window._native_icon_handles = (hicon_small, hicon_big)
+    except Exception:
+        pass
+
+
+def apply_windows_title_bar_theme(window, is_dark):
+    if sys.platform != "win32":
+        return
+
+    try:
+        hwnd = get_native_window_handle(window)
+        if not hwnd:
+            return
+        dark_value = c_int(1 if is_dark else 0)
+
+        for attr in (DWMWA_USE_IMMERSIVE_DARK_MODE, DWMWA_USE_IMMERSIVE_DARK_MODE_BEFORE_20H1):
+            windll.dwmapi.DwmSetWindowAttribute(hwnd, attr, byref(dark_value), sizeof(dark_value))
+
+        caption = c_int(0x000000 if is_dark else DWMWA_COLOR_DEFAULT)
+        text = c_int(0x00FFFFFF if is_dark else DWMWA_COLOR_DEFAULT)
+        border = c_int(0x000000 if is_dark else DWMWA_COLOR_DEFAULT)
+        windll.dwmapi.DwmSetWindowAttribute(hwnd, DWMWA_CAPTION_COLOR, byref(caption), sizeof(caption))
+        windll.dwmapi.DwmSetWindowAttribute(hwnd, DWMWA_TEXT_COLOR, byref(text), sizeof(text))
+        windll.dwmapi.DwmSetWindowAttribute(hwnd, DWMWA_BORDER_COLOR, byref(border), sizeof(border))
+    except Exception:
+        pass
 
 class KOReaderRemoteApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("Hugoの翻页助手")
+        self.root.title(APP_NAME)
         
         # === 加载自定义图标 ===
-        try:
-            self.root.iconbitmap(resource_path("icon.ico"))
-        except:
-            pass
-
+        apply_native_window_icon(self.root)
         # 核心变量
         self.connected = False
         self.base_url = ""
@@ -102,6 +201,9 @@ class KOReaderRemoteApp:
         self.root.minsize(250, 220)  # 设置最小尺寸
         
         # 应用置顶状态
+        # 应用置顶状态
+        self.root.after(0, self.refresh_native_window_chrome)
+        self.root.after(200, self.refresh_native_window_chrome)
         self.root.attributes('-topmost', self.always_on_top)
         
         # 构建界面
@@ -115,9 +217,12 @@ class KOReaderRemoteApp:
         self.root.protocol("WM_DELETE_WINDOW", self.on_close)
         
         # === 手柄初始化 ===
-        self.gamepad_running = True
-        self.gamepad_thread = threading.Thread(target=self.gamepad_poll_loop, daemon=True)
-        self.gamepad_thread.start()
+        self.gamepad_running = pygame is not None
+        if self.gamepad_running:
+            self.gamepad_thread = threading.Thread(target=self.gamepad_poll_loop, daemon=True)
+            self.gamepad_thread.start()
+        else:
+            print(f"pygame unavailable, gamepad disabled: {PYGAME_IMPORT_ERROR}")
         
         # === 键盘绑定 ===
         self.root.bind('<Prior>', lambda e: self.previous_page())
@@ -135,6 +240,10 @@ class KOReaderRemoteApp:
         x = (screen_width - width) // 2
         y = (screen_height - height) // 2
         self.root.geometry(f'{width}x{height}+{x}+{y}')
+
+    def refresh_native_window_chrome(self):
+        apply_native_window_icon(self.root)
+        apply_windows_title_bar_theme(self.root, self.current_theme == "dark")
 
     def create_widgets(self):
         # === 1. 顶部标题栏 (极简版) ===
@@ -274,6 +383,8 @@ class KOReaderRemoteApp:
         if self.current_theme not in THEMES: self.current_theme = "light"
         t = THEMES[self.current_theme]
         
+        self.refresh_native_window_chrome()
+        self.root.after_idle(self.refresh_native_window_chrome)
         # 1. 背景色
         for w in [self.root, self.main_container, self.page_login, self.page_control, 
                   self.frame_actions, self.frame_info]:
@@ -333,7 +444,7 @@ class KOReaderRemoteApp:
         self.config = {}
         if os.path.exists(CONFIG_FILE):
             try:
-                with open(CONFIG_FILE, 'r') as f:
+                with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
                     self.config = json.load(f)
                     self.ip_var.set(self.config.get('last_ip', ''))
                     self.current_theme = self.config.get('theme', 'light')
@@ -364,7 +475,8 @@ class KOReaderRemoteApp:
             self.config['window_height'] = self.root.winfo_height()
             with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
                 json.dump(self.config, f, indent=4, ensure_ascii=False)
-        except: pass
+        except Exception:
+            pass
     
     def toggle_always_on_top(self):
         """切换窗口置顶状态"""
@@ -477,22 +589,15 @@ class KOReaderRemoteApp:
                 
                 # 增加超时时间到90秒，因为墨水屏渲染可能很慢
                 # Stream下载以避免 IncompleteRead
-                with session.get(url, headers=headers, stream=True, timeout=1000) as resp:
+                with session.get(url, headers=headers, stream=True, timeout=(5, 90)) as resp:
                     resp.raise_for_status()
                     
                     # 生成文件名
                     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
                     filename = f"screenshot_{timestamp}.png"
                     
-                    if getattr(sys, 'frozen', False):
-                        base_dir = os.path.dirname(sys.executable)
-                    else:
-                        base_dir = os.getcwd()
-                    
-                    screenshots_dir = os.path.join(base_dir, "screenshots")
-                    os.makedirs(screenshots_dir, exist_ok=True)
-                        
-                    filepath = os.path.join(screenshots_dir, filename)
+                    os.makedirs(SCREENSHOTS_DIR, exist_ok=True)
+                    filepath = os.path.join(SCREENSHOTS_DIR, filename)
 
                     # 使用 iter_content 分块写入，更稳健
                     with open(filepath, "wb") as f:
@@ -528,9 +633,6 @@ class KOReaderRemoteApp:
         time = datetime.now().strftime("%H:%M:%S")
         self.lbl_status.config(text=f"{time} - {text}", fg=color)
 
-        time = datetime.now().strftime("%H:%M:%S")
-        self.lbl_status.config(text=f"{time} - {text}", fg=color)
-
     def update_gamepad_status(self, connected):
         """更新手柄状态指示灯"""
         color = "#4CAF50" if connected else "#FF5252" # 绿 / 红
@@ -540,6 +642,8 @@ class KOReaderRemoteApp:
 
     def gamepad_poll_loop(self):
         """手柄轮询线程 (稳定版)"""
+        if pygame is None:
+            return
         try:
             pygame.init()
             pygame.joystick.init()
@@ -650,6 +754,7 @@ class KOReaderRemoteApp:
         sys.exit(0)
 
 def main():
+    set_windows_app_id()
     root = tk.Tk()
     try: from ctypes import windll; windll.shcore.SetProcessDpiAwareness(1)
     except: pass

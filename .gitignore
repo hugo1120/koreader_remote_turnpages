@@ -3,6 +3,11 @@ __pycache__/
 *.py[cod]
 *$py.class
 *.log
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
 
 # Distribution / Builds
 build/
@@ -26,4 +31,9 @@ screenshots/
 .idea/
 *.swp
 *.swo
+
+# Windows / Local
+Thumbs.db
+Desktop.ini
+备份/
 
