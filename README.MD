@@ -1,103 +1,124 @@
 # KOReader Page Turner
 
-Desktop remote control for KOReader on the local network.
+Windows desktop remote for KOReader over the local network.
 
-## English
+## Overview
 
-### Overview
-`KOReader Page Turner` lets you control a KOReader device from Windows. It supports page turning, full refresh, rotation, suspend, screenshots, keyboard shortcuts, mouse wheel, and Xbox-compatible gamepads.
+`KOReader Page Turner` is a small Tkinter desktop tool for controlling KOReader from a Windows PC. It supports page turning, full refresh, rotation, suspend, screenshots, keyboard shortcuts, mouse wheel control, and optional gamepad input.
 
-### Requirements
-- Python 3.x
-- KOReader HTTP Server enabled on the device
+## Features
 
-### Install
-```bash
-python -m pip install requests pygame
-```
-
-### Run
-```bash
-python "koreader_page_turner.py"
-```
-
-### Build Single EXE
-```bash
-build_exe.bat
-```
-
-Output:
-```text
-dist/KOReader Page Turner.exe
-```
-
-### Features
-- Page turning with buttons, arrow keys, `PageUp`, `PageDown`, and mouse wheel
+- Previous page / next page buttons
+- Keyboard shortcuts: `Left`, `Right`, `Up`, `Down`, `PageUp`, `PageDown`
+- Mouse wheel page turning
 - Quick actions: rotate, refresh, screenshot, suspend
 - Light / dark theme
-- Always-on-top window mode
-- Optional gamepad support through `pygame`
-- Runtime config saved to `koreader_config.json`
+- Always-on-top mode
+- Optional `pygame` gamepad support
+- Local config persistence in `koreader_config.json`
+- Single-file Windows EXE packaging
 
-### Keyboard Shortcuts
-- `Left` / `Up` / `PageUp`: Previous page
-- `Right` / `Down` / `PageDown`: Next page
-- `Mouse Wheel`: Turn pages
-- `Esc`: Suspend device
+## Requirements
 
-## 中文
-
-### 简介
-`KOReader Page Turner` 是一个用于局域网控制 KOReader 的 Windows 桌面工具，支持翻页、旋转、全刷、截图、休眠，以及键盘、鼠标滚轮、Xbox 手柄控制。
-
-### 环境要求
+- Windows
 - Python 3.x
-- 阅读器端已开启 KOReader 的 HTTP Server
+- KOReader with HTTP Server enabled
 
-### 安装依赖
-```bash
-python -m pip install requests pygame
+Enable it on the device:
+
+```text
+Network -> SSH/HTTP Server
 ```
 
-### 运行
+## Install
+
+Minimum runtime dependencies:
+
+```bash
+python -m pip install requests
+```
+
+Optional gamepad support:
+
+```bash
+python -m pip install pygame
+```
+
+If `pygame` fails to import, the app still starts normally. Only gamepad control is disabled.
+
+## Run
+
 ```bash
 python "koreader_page_turner.py"
 ```
 
-### 打包单文件 EXE
+## Build Single EXE
+
+Use the included script:
+
 ```bash
 build_exe.bat
 ```
 
-生成结果：
+Or run PyInstaller manually:
+
+```bash
+python -m PyInstaller --noconsole --onefile --clean --name "KOReader Page Turner" --icon "logo.ico" --add-data "logo.ico;." --add-data "logo.png;." "koreader_page_turner.py"
+```
+
+Build output:
+
 ```text
 dist/KOReader Page Turner.exe
 ```
 
-### 使用说明
-1. 在 KOReader 中开启 `Network -> SSH/HTTP Server`
-2. 启动 `koreader_page_turner.py` 或打包后的 exe
-3. 输入设备 IP 地址并连接
-4. 使用界面按钮、键盘、滚轮或手柄进行控制
+## Usage
 
-### 主要功能
-- 上一页 / 下一页翻页
-- 屏幕旋转与全刷
-- 保存设备截图到 `screenshots/`
-- 设备休眠
-- 浅色 / 深色主题切换
+1. Enable KOReader HTTP Server on the device.
+2. Start `koreader_page_turner.py` or the packaged EXE.
+3. Enter the device IP address.
+4. Connect and control page turns from the desktop app.
+
+## Runtime Files
+
+Generated locally in the application directory:
+
+- `koreader_config.json`: saved IP, theme, window size, and gamepad mapping
+- `screenshots/`: captured device screenshots
+
+These files should stay local and should not be committed.
+
+## Notes
+
+- The app icon is loaded from `logo.ico`, and `logo.png` is bundled for Tk window icon compatibility.
+- The packaged EXE is intended to show the icon both in the taskbar and in the top-left window corner.
+- If you use a Python environment with incompatible `pygame` binaries, only the gamepad feature is affected.
+
+## 中文说明
+
+`KOReader Page Turner` 是一个用于局域网控制 KOReader 的 Windows 桌面工具，基于 Tkinter 开发。
+
+主要功能：
+
+- 上一页 / 下一页
+- 键盘、滚轮、可选手柄控制
+- 旋转、全刷、截图、休眠
+- 浅色 / 深色主题
 - 窗口置顶
-- 自定义手柄映射
+- 打包为单文件 EXE
 
-### 快捷键
-- `↑` / `←` / `PageUp`：上一页
-- `↓` / `→` / `PageDown`：下一页
-- `鼠标滚轮`：翻页
-- `Esc`：设备休眠
+运行步骤：
 
-### 配置文件
-首次运行后会在程序目录生成 `koreader_config.json`，用于保存：
-- 最近连接的 IP
-- 当前主题
-- 窗口大小
-- 手柄按键映射
+1. 在 KOReader 中开启 `Network -> SSH/HTTP Server`
+2. 运行 `python "koreader_page_turner.py"` 或打包后的 EXE
+3. 输入设备 IP 并连接
+4. 使用界面按钮、键盘、滚轮或手柄控制翻页
+
+依赖安装：
+
+```bash
+python -m pip install requests
+python -m pip install pygame
+```
+
+其中 `pygame` 是可选的。若导入失败，程序仍可启动，只是手柄功能不可用。
