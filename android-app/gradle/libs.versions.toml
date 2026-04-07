@@ -13,6 +13,7 @@ coroutines = "1.8.1"
 datastore = "1.1.1"
 lifecycle = "2.8.4"
 truth = "1.4.4"
+materialComponents = "1.12.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -37,6 +38,7 @@ lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel
 lifecycle-viewmodel-ktx = { module = "androidx.lifecycle:lifecycle-viewmodel-ktx", version.ref = "lifecycle" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
 truth = { module = "com.google.truth:truth", version.ref = "truth" }
+google-material = { module = "com.google.android.material:material", version.ref = "materialComponents" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
