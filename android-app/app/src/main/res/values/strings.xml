@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">KOReader Remote</string>
+    <string name="app_boot_text">KOReader Remote Android 初始化完成</string>
+</resources>
