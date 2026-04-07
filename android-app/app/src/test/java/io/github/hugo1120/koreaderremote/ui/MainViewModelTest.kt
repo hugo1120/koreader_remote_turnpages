@@ -272,10 +272,16 @@ class MainViewModelTest {
     @Test
     fun `hardware button returns false while busy`() = runTest {
         val baseUrl = "http://192.168.1.88:8080"
+        val sendGate = CompletableDeferred<Unit>()
         val settingsRepository = FakeSettingsRepository(
             initialPreferences = UserPreferences(volumeKeysEnabled = true),
         )
-        val remoteRepository = FakeRemoteRepository()
+        val remoteRepository = FakeRemoteRepository(
+            sendBehavior = { _, _ ->
+                sendGate.await()
+                Result.success(Unit)
+            },
+        )
         val viewModel = MainViewModel(
             remoteRepository = remoteRepository,
             settingsRepository = settingsRepository,
@@ -293,6 +299,9 @@ class MainViewModelTest {
         assertThat(handled).isFalse()
         assertThat(remoteRepository.sendCallCount).isEqualTo(1)
         assertThat(remoteRepository.lastAction).isEqualTo(RemoteAction.FullRefresh)
+
+        sendGate.complete(Unit)
+        advanceUntilIdle()
     }
 
     @Test
@@ -327,11 +336,15 @@ class MainViewModelTest {
     @Test
     fun `toggle rotation failure keeps busy false and shows error`() = runTest {
         val baseUrl = "http://192.168.1.88:8080"
+        val rotationGate = CompletableDeferred<Unit>()
         val settingsRepository = FakeSettingsRepository(
             initialPreferences = UserPreferences(),
         )
         val remoteRepository = FakeRemoteRepository(
-            setRotationBehavior = { _, _ -> Result.failure(IllegalStateException("rotate failed")) },
+            setRotationBehavior = { _, _ ->
+                rotationGate.await()
+                Result.failure(IllegalStateException("rotate failed"))
+            },
         )
         val viewModel = MainViewModel(
             remoteRepository = remoteRepository,
@@ -345,6 +358,7 @@ class MainViewModelTest {
 
         viewModel.toggleRotation()
         assertThat(viewModel.uiState.value.isBusy).isTrue()
+        rotationGate.complete(Unit)
         advanceUntilIdle()
 
         val state = viewModel.uiState.value
@@ -360,11 +374,15 @@ class MainViewModelTest {
         val baseUrl = "http://192.168.1.88:8080"
         val screenshotBytes = byteArrayOf(1, 2, 3, 4)
         val savedLocation = "content://media/external/images/media/123"
+        val screenshotGate = CompletableDeferred<Unit>()
         val settingsRepository = FakeSettingsRepository(
             initialPreferences = UserPreferences(),
         )
         val remoteRepository = FakeRemoteRepository(
-            screenshotStreamProvider = { ByteArrayInputStream(screenshotBytes) },
+            screenshotStreamProvider = {
+                screenshotGate.await()
+                ByteArrayInputStream(screenshotBytes)
+            },
         )
         val screenshotSaver = FakeScreenshotSaver(location = savedLocation)
         val viewModel = MainViewModel(
@@ -381,6 +399,7 @@ class MainViewModelTest {
         assertThat(viewModel.uiState.value.isBusy).isTrue()
         assertThat(viewModel.uiState.value.statusMessage).isEqualTo("截图中...")
 
+        screenshotGate.complete(Unit)
         advanceUntilIdle()
 
         val state = viewModel.uiState.value
@@ -396,11 +415,15 @@ class MainViewModelTest {
     @Test
     fun `take screenshot failure clears busy and shows error`() = runTest {
         val baseUrl = "http://192.168.1.88:8080"
+        val screenshotGate = CompletableDeferred<Unit>()
         val settingsRepository = FakeSettingsRepository(
             initialPreferences = UserPreferences(),
         )
         val remoteRepository = FakeRemoteRepository(
-            screenshotStreamProvider = { ByteArrayInputStream(byteArrayOf(1, 2, 3)) },
+            screenshotStreamProvider = {
+                screenshotGate.await()
+                ByteArrayInputStream(byteArrayOf(1, 2, 3))
+            },
         )
         val screenshotSaver = FakeScreenshotSaver(shouldThrow = true)
         val viewModel = MainViewModel(
@@ -415,6 +438,7 @@ class MainViewModelTest {
 
         viewModel.takeScreenshot()
         assertThat(viewModel.uiState.value.isBusy).isTrue()
+        screenshotGate.complete(Unit)
         advanceUntilIdle()
 
         val state = viewModel.uiState.value
@@ -521,6 +545,9 @@ private class FakeRemoteRepository(
     private val connectBehavior: suspend (String) -> Result<String> = {
         Result.success("http://127.0.0.1:8080")
     },
+    private val sendBehavior: suspend (String, RemoteAction) -> Result<Unit> = { _, _ ->
+        Result.success(Unit)
+    },
     private val setRotationBehavior: suspend (String, Int) -> Result<Unit> = { _, _ ->
         Result.success(Unit)
     },
@@ -547,7 +574,7 @@ private class FakeRemoteRepository(
     override suspend fun send(baseUrl: String, action: RemoteAction): Result<Unit> {
         sendCallCount += 1
         lastAction = action
-        return Result.success(Unit)
+        return sendBehavior(baseUrl, action)
     }
 
     override suspend fun setRotation(baseUrl: String, rotationMode: Int): Result<Unit> {
