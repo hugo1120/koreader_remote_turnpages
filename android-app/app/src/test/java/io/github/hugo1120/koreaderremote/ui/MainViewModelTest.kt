@@ -292,7 +292,10 @@ class MainViewModelTest {
         advanceUntilIdle()
         viewModel.seedConnectedState(baseUrl)
         viewModel.sendAction(RemoteAction.FullRefresh)
+        advanceUntilIdle()
         assertThat(viewModel.uiState.value.isBusy).isTrue()
+        assertThat(remoteRepository.sendCallCount).isEqualTo(1)
+        assertThat(remoteRepository.lastAction).isEqualTo(RemoteAction.FullRefresh)
 
         val handled = viewModel.onHardwareButton(HardwareButton.VolumeDown)
 
