@@ -11,6 +11,7 @@ import io.github.hugo1120.koreaderremote.platform.input.VolumeKeyActionResolver
 import io.github.hugo1120.koreaderremote.platform.storage.ScreenshotSaver
 import java.io.ByteArrayInputStream
 import java.io.InputStream
+import java.net.SocketTimeoutException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -101,8 +102,37 @@ class MainViewModelTest {
         assertThat(state.isConnected).isFalse()
         assertThat(state.currentScreen).isEqualTo(AppScreen.Connect)
         assertThat(state.baseUrl).isEmpty()
-        assertThat(state.statusMessage).isEqualTo("连接失败")
+        assertThat(state.statusMessage).isEqualTo("连接失败：无法访问 KOReader 接口")
         assertThat(state.isError).isTrue()
+    }
+
+    @Test
+    fun `connect failure surfaces underlying reason in status`() = runTest {
+        val settingsRepository = FakeSettingsRepository(
+            initialPreferences = UserPreferences(),
+        )
+        val remoteRepository = FakeRemoteRepository(
+            connectBehavior = {
+                Result.failure(SocketTimeoutException("timeout"))
+            },
+        )
+        val viewModel = MainViewModel(
+            remoteRepository = remoteRepository,
+            settingsRepository = settingsRepository,
+            screenshotSaver = FakeScreenshotSaver(),
+            volumeKeyActionResolver = VolumeKeyActionResolver(),
+        )
+
+        advanceUntilIdle()
+        viewModel.onHostChanged("192.168.1.88")
+        viewModel.connect()
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertThat(state.isConnected).isFalse()
+        assertThat(state.isError).isTrue()
+        assertThat(state.statusMessage).contains("连接失败")
+        assertThat(state.statusMessage).contains("timeout")
     }
 
     @Test

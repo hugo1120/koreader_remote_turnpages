@@ -18,6 +18,15 @@ Set-Location "D:/github/koreader_remote_turnpages/android-app"
 - debug 工作流会执行 `testDebugUnitTest` 与 `assembleDebug`，成功后上传 debug APK artifact `koreader-remote-debug-apk`（`android-app/app/build/outputs/apk/debug/*.apk`）
 - release 工作流会先执行 `testDebugUnitTest`，再执行 `assembleDebug`，再执行 `assembleRelease`，成功后上传 release APK artifact `koreader-remote-release-apk`（`android-app/app/build/outputs/apk/release/*.apk`）
 
+## 安装说明
+- GitHub Actions 下载到的是 artifact 压缩包，先解压，再安装其中的 `.apk` 文件
+- 当前 `minSdk = 26`，要求 Android 8.0 及以上系统
+- 如果手机上已经装过旧版 `io.github.hugo1120.koreaderremote`，安装新的 CI debug APK 前建议先卸载旧包，避免因签名不同导致覆盖安装失败
+- 若安装界面长时间停留在“正在安装”，优先检查：
+  - 是否直接点了 artifact 压缩包而不是其中的 `.apk`
+  - 是否已有同包名旧包未卸载
+  - 是否允许“安装未知应用”
+
 ## Release Signing（GitHub Secrets）
 release 构建依赖以下 Secrets：
 - `ANDROID_KEYSTORE_BASE64`：keystore 文件的 Base64 文本

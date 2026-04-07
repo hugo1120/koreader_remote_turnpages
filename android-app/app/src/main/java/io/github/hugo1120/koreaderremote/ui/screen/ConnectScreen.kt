@@ -1,10 +1,6 @@
 package io.github.hugo1120.koreaderremote.ui.screen
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -16,6 +12,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.text.KeyboardOptions
+import io.github.hugo1120.koreaderremote.ui.component.CenteredScreenLayout
 import io.github.hugo1120.koreaderremote.ui.state.MainUiState
 
 @Composable
@@ -25,12 +22,7 @@ fun ConnectScreen(
     onConnectClick: () -> Unit,
     onOpenSettings: () -> Unit,
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(24.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-    ) {
+    CenteredScreenLayout(verticalSpacing = 16.dp) {
         Text(
             text = "连接 KOReader",
             style = MaterialTheme.typography.headlineSmall,
@@ -39,7 +31,8 @@ fun ConnectScreen(
             value = state.hostInput,
             onValueChange = onHostChanged,
             singleLine = true,
-            label = { Text("IP 或主机名") },
+            label = { Text("IP、主机名或 URL") },
+            supportingText = { Text("默认端口 8080，也可输入 192.168.1.88:8081") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
             modifier = Modifier.fillMaxWidth(),
         )
@@ -60,7 +53,7 @@ fun ConnectScreen(
         Text(
             text = state.statusMessage,
             color = if (state.isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 2,
+            maxLines = 4,
             overflow = TextOverflow.Ellipsis,
         )
     }

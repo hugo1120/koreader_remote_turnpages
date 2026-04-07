@@ -10,6 +10,9 @@ import io.github.hugo1120.koreaderremote.platform.input.HardwareButton
 import io.github.hugo1120.koreaderremote.platform.input.VolumeKeyActionResolver
 import io.github.hugo1120.koreaderremote.platform.storage.ScreenshotSaver
 import io.github.hugo1120.koreaderremote.ui.state.MainUiState
+import java.net.ConnectException
+import java.net.SocketTimeoutException
+import java.net.UnknownHostException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -110,7 +113,7 @@ class MainViewModel(
                             currentScreen = AppScreen.Connect,
                             baseUrl = "",
                             isError = true,
-                            statusMessage = "连接失败",
+                            statusMessage = connectFailureMessage(it),
                         )
                     }
                 }
@@ -392,4 +395,32 @@ class MainViewModel(
             RemoteAction.FullRefresh -> "发送失败：全刷"
             RemoteAction.Suspend -> "发送失败：休眠"
         }
+
+    private fun connectFailureMessage(throwable: Throwable): String {
+        val rootCause = rootCauseOf(throwable)
+        val detail = when (rootCause) {
+            is SocketTimeoutException -> rootCause.message ?: "连接超时"
+            is ConnectException -> "连接被拒绝"
+            is UnknownHostException -> "地址解析失败"
+            is IllegalArgumentException -> "地址格式无效"
+            else -> {
+                val message = rootCause.message?.trim().orEmpty()
+                when {
+                    message.isBlank() -> rootCause.javaClass.simpleName
+                    message.equals("connect failed", ignoreCase = true) -> "无法访问 KOReader 接口"
+                    else -> message
+                }
+            }
+        }
+
+        return "连接失败：$detail"
+    }
+
+    private fun rootCauseOf(throwable: Throwable): Throwable {
+        var current = throwable
+        while (current.cause != null && current.cause !== current) {
+            current = current.cause!!
+        }
+        return current
+    }
 }

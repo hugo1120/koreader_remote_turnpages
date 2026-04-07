@@ -1,11 +1,8 @@
 package io.github.hugo1120.koreaderremote.ui.screen
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -14,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.github.hugo1120.koreaderremote.domain.model.RemoteAction
+import io.github.hugo1120.koreaderremote.ui.component.CenteredScreenLayout
 import io.github.hugo1120.koreaderremote.ui.component.RemoteActionButton
 import io.github.hugo1120.koreaderremote.ui.state.MainUiState
 
@@ -26,12 +24,7 @@ fun RemoteScreen(
     onOpenSettings: () -> Unit,
     onDisconnect: () -> Unit,
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(24.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
+    CenteredScreenLayout(verticalSpacing = 12.dp) {
         Text(
             text = "已连接：${state.baseUrl}",
             style = MaterialTheme.typography.titleMedium,
@@ -90,7 +83,7 @@ fun RemoteScreen(
         Text(
             text = state.statusMessage,
             color = if (state.isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 2,
+            maxLines = 3,
             overflow = TextOverflow.Ellipsis,
         )
     }
