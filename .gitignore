@@ -12,6 +12,7 @@ htmlcov/
 # Distribution / Builds
 build/
 dist/
+参考图/
 *.spec
 *.exe
 *.manifest

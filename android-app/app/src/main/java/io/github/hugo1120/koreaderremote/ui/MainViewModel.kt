@@ -2,9 +2,11 @@ package io.github.hugo1120.koreaderremote.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import io.github.hugo1120.koreaderremote.data.network.KoreaderHttpClient
 import io.github.hugo1120.koreaderremote.data.repository.KoreaderRemoteRepository
 import io.github.hugo1120.koreaderremote.data.settings.SettingsRepository
 import io.github.hugo1120.koreaderremote.domain.model.AppScreen
+import io.github.hugo1120.koreaderremote.domain.model.ControlMode
 import io.github.hugo1120.koreaderremote.domain.model.RemoteAction
 import io.github.hugo1120.koreaderremote.platform.input.HardwareButton
 import io.github.hugo1120.koreaderremote.platform.input.PageTurnRateLimiter
@@ -28,20 +30,38 @@ class MainViewModel(
     private val volumeKeyActionResolver: VolumeKeyActionResolver,
     private val pageTurnRateLimiter: PageTurnRateLimiter = PageTurnRateLimiter(),
 ) : ViewModel() {
+    private val numericTailRegex = Regex("^\\d+$")
+    private val schemeRegex = Regex("^[a-zA-Z][a-zA-Z\\d+\\-.]*://")
+    private val bracketedHostWithPortRegex = Regex("^\\[[^\\]]+\\]:\\d+$")
     private val _uiState = MutableStateFlow(MainUiState())
     val uiState: StateFlow<MainUiState> = _uiState.asStateFlow()
     private var latestPageTurnRequestToken: Long = 0L
+    private var didRestoreConnectionInputs = false
+    private var pendingControlMode: ControlMode? = null
 
     init {
         viewModelScope.launch {
             settingsRepository.preferencesFlow.collect { preferences ->
                 _uiState.update { state ->
+                    val shouldRestoreConnectionInputs = !didRestoreConnectionInputs
+                    if (shouldRestoreConnectionInputs) {
+                        didRestoreConnectionInputs = true
+                    }
+                    if (pendingControlMode == preferences.lastControlMode) {
+                        pendingControlMode = null
+                    }
                     state.copy(
                         preferences = preferences,
-                        hostInput = if (state.hostInput.isBlank()) {
-                            preferences.lastHost
+                        currentControlMode = pendingControlMode ?: preferences.lastControlMode,
+                        hostInput = if (shouldRestoreConnectionInputs) {
+                            restoreHostInput(preferences.lastHost)
                         } else {
                             state.hostInput
+                        },
+                        portInput = if (shouldRestoreConnectionInputs) {
+                            restorePortInput(preferences.lastPort)
+                        } else {
+                            state.portInput
                         },
                     )
                 }
@@ -50,8 +70,43 @@ class MainViewModel(
     }
 
     fun onHostChanged(value: String) {
+        didRestoreConnectionInputs = true
         _uiState.update { state ->
             state.copy(hostInput = value)
+        }
+    }
+
+    fun onPortChanged(value: String) {
+        didRestoreConnectionInputs = true
+        val sanitizedPort = value.filter { it.isDigit() }.take(MAX_PORT_INPUT_LENGTH)
+        _uiState.update { state ->
+            state.copy(portInput = sanitizedPort)
+        }
+    }
+
+    fun onRecentHostSelected(value: String) {
+        val trimmedValue = value.trim()
+        if (trimmedValue.isBlank()) {
+            return
+        }
+
+        didRestoreConnectionInputs = true
+        val parsed = runCatching {
+            KoreaderHttpClient.parseHostPort(trimmedValue)
+        }.getOrNull()
+
+        _uiState.update { state ->
+            if (parsed == null) {
+                state.copy(
+                    hostInput = trimmedValue,
+                    portInput = restorePortInput(state.preferences.lastPort),
+                )
+            } else {
+                state.copy(
+                    hostInput = parsed.host,
+                    portInput = parsed.port.toString(),
+                )
+            }
         }
     }
 
@@ -61,7 +116,11 @@ class MainViewModel(
             return
         }
 
-        val input = currentState.hostInput.trim()
+        val input = resolveConnectInput(
+            rawHostInput = currentState.hostInput,
+            rawPortInput = currentState.portInput,
+            preferredSubnetPrefix = currentState.preferences.preferredSubnetPrefix,
+        )
         if (input.isBlank()) {
             _uiState.update { state ->
                 state.copy(
@@ -93,19 +152,22 @@ class MainViewModel(
 
             connectResult
                 .onSuccess { baseUrl ->
+                    val parsedConnection = KoreaderHttpClient.parseHostPort(baseUrl)
                     _uiState.update { state ->
                         state.copy(
                             isBusy = false,
                             isConnected = true,
                             currentScreen = AppScreen.Remote,
                             baseUrl = baseUrl,
+                            hostInput = parsedConnection.host,
+                            portInput = parsedConnection.port.toString(),
                             rotationMode = 0,
                             statusMessage = "连接成功",
                             isError = false,
                         )
                     }
                     runCatching {
-                        settingsRepository.updateLastHost(input)
+                        settingsRepository.rememberSuccessfulConnection(baseUrl)
                     }
                 }
                 .onFailure {
@@ -319,6 +381,43 @@ class MainViewModel(
         }
     }
 
+    fun setControlMode(mode: ControlMode) {
+        if (uiState.value.currentControlMode == mode) {
+            return
+        }
+
+        pendingControlMode = mode
+        _uiState.update { state ->
+            state.copy(
+                currentControlMode = mode,
+                isError = false,
+            )
+        }
+
+        viewModelScope.launch {
+            runCatching {
+                settingsRepository.updateLastControlMode(mode)
+            }.onFailure {
+                pendingControlMode = null
+                _uiState.update { state ->
+                    state.copy(
+                        currentControlMode = state.preferences.lastControlMode,
+                        isError = true,
+                        statusMessage = "更新控制模式失败",
+                    )
+                }
+            }
+        }
+    }
+
+    fun toggleControlMode() {
+        val nextMode = when (uiState.value.currentControlMode) {
+            ControlMode.Button -> ControlMode.Blind
+            ControlMode.Blind -> ControlMode.Button
+        }
+        setControlMode(nextMode)
+    }
+
     fun disconnect() {
         if (uiState.value.isBusy) {
             return
@@ -477,5 +576,78 @@ class MainViewModel(
             current = current.cause!!
         }
         return current
+    }
+
+    private fun resolveConnectInput(
+        rawHostInput: String,
+        rawPortInput: String,
+        preferredSubnetPrefix: String,
+    ): String {
+        val trimmedHostInput = rawHostInput.trim()
+        if (trimmedHostInput.isBlank()) {
+            return ""
+        }
+
+        val resolvedHost = if (trimmedHostInput.matches(numericTailRegex) && preferredSubnetPrefix.isNotBlank()) {
+            "$preferredSubnetPrefix.$trimmedHostInput"
+        } else {
+            trimmedHostInput
+        }
+
+        if (schemeRegex.containsMatchIn(resolvedHost) || hasExplicitPort(resolvedHost)) {
+            return resolvedHost
+        }
+
+        val resolvedPort = rawPortInput.trim().toIntOrNull()
+            ?.takeIf { it in 1..MAX_VALID_PORT }
+            ?: DEFAULT_KOREADER_PORT
+        val formattedHost = formatHostIfNeeded(resolvedHost)
+        return if (resolvedPort == DEFAULT_KOREADER_PORT) {
+            formattedHost
+        } else {
+            "$formattedHost:$resolvedPort"
+        }
+    }
+
+    private fun hasExplicitPort(hostInput: String): Boolean {
+        if (hostInput.startsWith("[")) {
+            return bracketedHostWithPortRegex.matches(hostInput)
+        }
+
+        val colonIndex = hostInput.lastIndexOf(':')
+        if (colonIndex <= 0 || colonIndex == hostInput.lastIndex) {
+            return false
+        }
+
+        if (hostInput.count { it == ':' } > 1) {
+            return false
+        }
+
+        val portPart = hostInput.substring(colonIndex + 1)
+        return portPart.isNotBlank() && portPart.all { it.isDigit() }
+    }
+
+    private fun formatHostIfNeeded(host: String): String {
+        return if (host.contains(":") && !host.startsWith("[")) {
+            "[$host]"
+        } else {
+            host
+        }
+    }
+
+    private fun restoreHostInput(host: String): String = host
+
+    private fun restorePortInput(port: Int): String {
+        return if (port in 1..MAX_VALID_PORT) {
+            port.toString()
+        } else {
+            DEFAULT_KOREADER_PORT.toString()
+        }
+    }
+
+    private companion object {
+        const val DEFAULT_KOREADER_PORT = 8080
+        const val MAX_PORT_INPUT_LENGTH = 5
+        const val MAX_VALID_PORT = 65535
     }
 }

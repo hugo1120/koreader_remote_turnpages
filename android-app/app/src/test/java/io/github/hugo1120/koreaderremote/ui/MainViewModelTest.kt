@@ -4,8 +4,10 @@ import com.google.common.truth.Truth.assertThat
 import io.github.hugo1120.koreaderremote.data.repository.KoreaderRemoteRepository
 import io.github.hugo1120.koreaderremote.data.settings.SettingsRepository
 import io.github.hugo1120.koreaderremote.domain.model.AppScreen
+import io.github.hugo1120.koreaderremote.domain.model.ControlMode
 import io.github.hugo1120.koreaderremote.domain.model.RemoteAction
 import io.github.hugo1120.koreaderremote.domain.model.UserPreferences
+import io.github.hugo1120.koreaderremote.data.network.KoreaderHttpClient
 import io.github.hugo1120.koreaderremote.platform.input.HardwareButton
 import io.github.hugo1120.koreaderremote.platform.input.PageTurnRateLimiter
 import io.github.hugo1120.koreaderremote.platform.input.VolumeKeyActionResolver
@@ -63,7 +65,7 @@ class MainViewModelTest {
         assertThat(state.isError).isFalse()
         assertThat(state.isBusy).isFalse()
         assertThat(remoteRepository.lastConnectInput).isEqualTo("192.168.1.88")
-        assertThat(settingsRepository.lastUpdatedHost).isEqualTo("192.168.1.88")
+        assertThat(settingsRepository.lastRememberedConnection).isEqualTo(expectedBaseUrl)
     }
 
     @Test
@@ -202,7 +204,7 @@ class MainViewModelTest {
         val expectedBaseUrl = "http://192.168.1.88:8080"
         val settingsRepository = FakeSettingsRepository(
             initialPreferences = UserPreferences(lastHost = "192.168.1.88"),
-            throwOnUpdateLastHost = true,
+            throwOnRememberSuccessfulConnection = true,
         )
         val remoteRepository = FakeRemoteRepository(
             connectBehavior = { Result.success(expectedBaseUrl) },
@@ -225,7 +227,414 @@ class MainViewModelTest {
         assertThat(state.baseUrl).isEqualTo(expectedBaseUrl)
         assertThat(state.statusMessage).isEqualTo("连接成功")
         assertThat(state.isError).isFalse()
-        assertThat(settingsRepository.updateLastHostCallCount).isEqualTo(1)
+        assertThat(settingsRepository.rememberSuccessfulConnectionCallCount).isEqualTo(1)
+    }
+
+    @Test
+    fun `connect with numeric tail expands to preferred subnet prefix`() = runTest {
+        val settingsRepository = FakeSettingsRepository(
+            initialPreferences = UserPreferences(
+                preferredSubnetPrefix = "192.168.10",
+            ),
+        )
+        val remoteRepository = FakeRemoteRepository(
+            connectBehavior = { Result.success("http://192.168.10.77:8080") },
+        )
+        val viewModel = MainViewModel(
+            remoteRepository = remoteRepository,
+            settingsRepository = settingsRepository,
+            screenshotSaver = FakeScreenshotSaver(),
+            volumeKeyActionResolver = VolumeKeyActionResolver(),
+        )
+
+        advanceUntilIdle()
+        viewModel.onHostChanged(" 77 ")
+        viewModel.connect()
+        advanceUntilIdle()
+
+        assertThat(remoteRepository.lastConnectInput).isEqualTo("192.168.10.77")
+    }
+
+    @Test
+    fun `connect with numeric tail still works when using separate port input`() = runTest {
+        val settingsRepository = FakeSettingsRepository(
+            initialPreferences = UserPreferences(
+                preferredSubnetPrefix = "192.168.10",
+            ),
+        )
+        val remoteRepository = FakeRemoteRepository(
+            connectBehavior = { Result.success("http://192.168.10.77:9090") },
+        )
+        val viewModel = MainViewModel(
+            remoteRepository = remoteRepository,
+            settingsRepository = settingsRepository,
+            screenshotSaver = FakeScreenshotSaver(),
+            volumeKeyActionResolver = VolumeKeyActionResolver(),
+        )
+
+        advanceUntilIdle()
+        viewModel.onHostChanged("77")
+        viewModel.onPortChanged("9090")
+        viewModel.connect()
+        advanceUntilIdle()
+
+        assertThat(remoteRepository.lastConnectInput).isEqualTo("192.168.10.77:9090")
+    }
+
+    @Test
+    fun `connect uses host input with explicit port over separate port input`() = runTest {
+        val settingsRepository = FakeSettingsRepository(
+            initialPreferences = UserPreferences(),
+        )
+        val remoteRepository = FakeRemoteRepository(
+            connectBehavior = { Result.success("http://192.168.1.88:18080") },
+        )
+        val viewModel = MainViewModel(
+            remoteRepository = remoteRepository,
+            settingsRepository = settingsRepository,
+            screenshotSaver = FakeScreenshotSaver(),
+            volumeKeyActionResolver = VolumeKeyActionResolver(),
+        )
+
+        advanceUntilIdle()
+        viewModel.onHostChanged("192.168.1.88:18080")
+        viewModel.onPortChanged("9090")
+        viewModel.connect()
+        advanceUntilIdle()
+
+        assertThat(remoteRepository.lastConnectInput).isEqualTo("192.168.1.88:18080")
+    }
+
+    @Test
+    fun `init restores host input with custom port when available`() = runTest {
+        val settingsRepository = FakeSettingsRepository(
+            initialPreferences = UserPreferences(
+                lastHost = "192.168.1.88",
+                lastPort = 18080,
+            ),
+        )
+        val viewModel = MainViewModel(
+            remoteRepository = FakeRemoteRepository(),
+            settingsRepository = settingsRepository,
+            screenshotSaver = FakeScreenshotSaver(),
+            volumeKeyActionResolver = VolumeKeyActionResolver(),
+        )
+
+        advanceUntilIdle()
+
+        assertThat(viewModel.uiState.value.hostInput).isEqualTo("192.168.1.88")
+        assertThat(viewModel.uiState.value.portInput).isEqualTo("18080")
+    }
+
+    @Test
+    fun `init restores ipv6 host input without brackets on default port`() = runTest {
+        val settingsRepository = FakeSettingsRepository(
+            initialPreferences = UserPreferences(
+                lastHost = "2001:db8::1",
+                lastPort = 8080,
+            ),
+        )
+        val viewModel = MainViewModel(
+            remoteRepository = FakeRemoteRepository(),
+            settingsRepository = settingsRepository,
+            screenshotSaver = FakeScreenshotSaver(),
+            volumeKeyActionResolver = VolumeKeyActionResolver(),
+        )
+
+        advanceUntilIdle()
+
+        assertThat(viewModel.uiState.value.hostInput).isEqualTo("2001:db8::1")
+        assertThat(viewModel.uiState.value.portInput).isEqualTo("8080")
+    }
+
+    @Test
+    fun `init keeps default port input when preferences are empty`() = runTest {
+        val settingsRepository = FakeSettingsRepository(
+            initialPreferences = UserPreferences(),
+        )
+        val viewModel = MainViewModel(
+            remoteRepository = FakeRemoteRepository(),
+            settingsRepository = settingsRepository,
+            screenshotSaver = FakeScreenshotSaver(),
+            volumeKeyActionResolver = VolumeKeyActionResolver(),
+        )
+
+        advanceUntilIdle()
+
+        assertThat(viewModel.uiState.value.portInput).isEqualTo("8080")
+    }
+
+    @Test
+    fun `on port changed updates state`() = runTest {
+        val settingsRepository = FakeSettingsRepository(
+            initialPreferences = UserPreferences(),
+        )
+        val viewModel = MainViewModel(
+            remoteRepository = FakeRemoteRepository(),
+            settingsRepository = settingsRepository,
+            screenshotSaver = FakeScreenshotSaver(),
+            volumeKeyActionResolver = VolumeKeyActionResolver(),
+        )
+
+        advanceUntilIdle()
+        viewModel.onPortChanged("18080")
+
+        assertThat(viewModel.uiState.value.portInput).isEqualTo("18080")
+    }
+
+    @Test
+    fun `click recent host fills host and port inputs`() = runTest {
+        val settingsRepository = FakeSettingsRepository(
+            initialPreferences = UserPreferences(
+                recentHosts = listOf("192.168.1.66:18080"),
+            ),
+        )
+        val viewModel = MainViewModel(
+            remoteRepository = FakeRemoteRepository(),
+            settingsRepository = settingsRepository,
+            screenshotSaver = FakeScreenshotSaver(),
+            volumeKeyActionResolver = VolumeKeyActionResolver(),
+        )
+
+        advanceUntilIdle()
+        viewModel.onRecentHostSelected("192.168.1.66:18080")
+
+        assertThat(viewModel.uiState.value.hostInput).isEqualTo("192.168.1.66")
+        assertThat(viewModel.uiState.value.portInput).isEqualTo("18080")
+    }
+
+    @Test
+    fun `click malformed recent host resets port input to remembered port`() = runTest {
+        val settingsRepository = FakeSettingsRepository(
+            initialPreferences = UserPreferences(
+                lastPort = 8080,
+            ),
+        )
+        val viewModel = MainViewModel(
+            remoteRepository = FakeRemoteRepository(),
+            settingsRepository = settingsRepository,
+            screenshotSaver = FakeScreenshotSaver(),
+            volumeKeyActionResolver = VolumeKeyActionResolver(),
+        )
+
+        advanceUntilIdle()
+        viewModel.onPortChanged("9090")
+        viewModel.onRecentHostSelected("reader-local")
+
+        assertThat(viewModel.uiState.value.hostInput).isEqualTo("reader-local")
+        assertThat(viewModel.uiState.value.portInput).isEqualTo("8080")
+    }
+
+    @Test
+    fun `preferences update after user clears host does not restore old connection inputs`() = runTest {
+        val settingsRepository = FakeSettingsRepository(
+            initialPreferences = UserPreferences(
+                lastHost = "192.168.1.88",
+                lastPort = 18080,
+            ),
+        )
+        val viewModel = MainViewModel(
+            remoteRepository = FakeRemoteRepository(),
+            settingsRepository = settingsRepository,
+            screenshotSaver = FakeScreenshotSaver(),
+            volumeKeyActionResolver = VolumeKeyActionResolver(),
+        )
+
+        advanceUntilIdle()
+        viewModel.onHostChanged("")
+        viewModel.setDarkTheme(true)
+        advanceUntilIdle()
+
+        assertThat(viewModel.uiState.value.hostInput).isEmpty()
+        assertThat(viewModel.uiState.value.portInput).isEqualTo("18080")
+        assertThat(viewModel.uiState.value.preferences.darkTheme).isTrue()
+    }
+
+    @Test
+    fun `first preferences emission does not override user input started before restore`() = runTest {
+        val settingsRepository = FakeSettingsRepository(
+            initialPreferences = UserPreferences(
+                lastHost = "192.168.1.88",
+                lastPort = 18080,
+            ),
+        )
+        val viewModel = MainViewModel(
+            remoteRepository = FakeRemoteRepository(),
+            settingsRepository = settingsRepository,
+            screenshotSaver = FakeScreenshotSaver(),
+            volumeKeyActionResolver = VolumeKeyActionResolver(),
+        )
+
+        viewModel.onHostChanged("192.168.1.99")
+        viewModel.onPortChanged("9090")
+        advanceUntilIdle()
+
+        assertThat(viewModel.uiState.value.hostInput).isEqualTo("192.168.1.99")
+        assertThat(viewModel.uiState.value.portInput).isEqualTo("9090")
+    }
+
+    @Test
+    fun `disconnect keeps normalized host and port after explicit host port connect`() = runTest {
+        val settingsRepository = FakeSettingsRepository(
+            initialPreferences = UserPreferences(),
+        )
+        val remoteRepository = FakeRemoteRepository(
+            connectBehavior = { Result.success("http://192.168.1.88:18080") },
+        )
+        val viewModel = MainViewModel(
+            remoteRepository = remoteRepository,
+            settingsRepository = settingsRepository,
+            screenshotSaver = FakeScreenshotSaver(),
+            volumeKeyActionResolver = VolumeKeyActionResolver(),
+        )
+
+        advanceUntilIdle()
+        viewModel.onHostChanged("192.168.1.88:18080")
+        viewModel.connect()
+        advanceUntilIdle()
+        viewModel.disconnect()
+
+        assertThat(viewModel.uiState.value.hostInput).isEqualTo("192.168.1.88")
+        assertThat(viewModel.uiState.value.portInput).isEqualTo("18080")
+    }
+
+    @Test
+    fun `connect success persists custom port and next launch restores same input`() = runTest {
+        val settingsRepository = FakeSettingsRepository(
+            initialPreferences = UserPreferences(),
+        )
+        val remoteRepository = FakeRemoteRepository(
+            connectBehavior = { Result.success("http://192.168.1.88:18080") },
+        )
+        val firstViewModel = MainViewModel(
+            remoteRepository = remoteRepository,
+            settingsRepository = settingsRepository,
+            screenshotSaver = FakeScreenshotSaver(),
+            volumeKeyActionResolver = VolumeKeyActionResolver(),
+        )
+
+        advanceUntilIdle()
+        firstViewModel.onHostChanged("192.168.1.88:18080")
+        firstViewModel.connect()
+        advanceUntilIdle()
+
+        val secondViewModel = MainViewModel(
+            remoteRepository = FakeRemoteRepository(),
+            settingsRepository = settingsRepository,
+            screenshotSaver = FakeScreenshotSaver(),
+            volumeKeyActionResolver = VolumeKeyActionResolver(),
+        )
+        advanceUntilIdle()
+
+        assertThat(secondViewModel.uiState.value.hostInput).isEqualTo("192.168.1.88")
+        assertThat(secondViewModel.uiState.value.portInput).isEqualTo("18080")
+        assertThat(secondViewModel.uiState.value.preferences.lastHost).isEqualTo("192.168.1.88")
+        assertThat(secondViewModel.uiState.value.preferences.lastPort).isEqualTo(18080)
+    }
+
+    @Test
+    fun `default control mode is button`() = runTest {
+        val viewModel = MainViewModel(
+            remoteRepository = FakeRemoteRepository(),
+            settingsRepository = FakeSettingsRepository(initialPreferences = UserPreferences()),
+            screenshotSaver = FakeScreenshotSaver(),
+            volumeKeyActionResolver = VolumeKeyActionResolver(),
+        )
+
+        advanceUntilIdle()
+
+        assertThat(viewModel.uiState.value.currentControlMode).isEqualTo(ControlMode.Button)
+        assertThat(viewModel.uiState.value.preferences.lastControlMode).isEqualTo(ControlMode.Button)
+    }
+
+    @Test
+    fun `toggle control mode persists and is restored by next view model`() = runTest {
+        val settingsRepository = FakeSettingsRepository(
+            initialPreferences = UserPreferences(lastControlMode = ControlMode.Button),
+        )
+        val firstViewModel = MainViewModel(
+            remoteRepository = FakeRemoteRepository(),
+            settingsRepository = settingsRepository,
+            screenshotSaver = FakeScreenshotSaver(),
+            volumeKeyActionResolver = VolumeKeyActionResolver(),
+        )
+
+        advanceUntilIdle()
+        firstViewModel.toggleControlMode()
+        advanceUntilIdle()
+
+        assertThat(firstViewModel.uiState.value.currentControlMode).isEqualTo(ControlMode.Blind)
+
+        val secondViewModel = MainViewModel(
+            remoteRepository = FakeRemoteRepository(),
+            settingsRepository = settingsRepository,
+            screenshotSaver = FakeScreenshotSaver(),
+            volumeKeyActionResolver = VolumeKeyActionResolver(),
+        )
+        advanceUntilIdle()
+
+        assertThat(secondViewModel.uiState.value.currentControlMode).isEqualTo(ControlMode.Blind)
+        assertThat(secondViewModel.uiState.value.preferences.lastControlMode).isEqualTo(ControlMode.Blind)
+    }
+
+    @Test
+    fun `setControlMode 在设置回流前也会立即更新当前模式`() = runTest {
+        val settingsRepository = DelayedControlModeSettingsRepository(
+            initialPreferences = UserPreferences(lastControlMode = ControlMode.Button),
+        )
+        val viewModel = MainViewModel(
+            remoteRepository = FakeRemoteRepository(),
+            settingsRepository = settingsRepository,
+            screenshotSaver = FakeScreenshotSaver(),
+            volumeKeyActionResolver = VolumeKeyActionResolver(),
+        )
+
+        advanceUntilIdle()
+        viewModel.setControlMode(ControlMode.Blind)
+
+        assertThat(viewModel.uiState.value.currentControlMode).isEqualTo(ControlMode.Blind)
+        assertThat(viewModel.uiState.value.preferences.lastControlMode).isEqualTo(ControlMode.Button)
+
+        advanceUntilIdle()
+        assertThat(settingsRepository.requestedControlModes).containsExactly(ControlMode.Blind)
+
+        settingsRepository.emitPendingPreferences()
+        advanceUntilIdle()
+
+        assertThat(viewModel.uiState.value.currentControlMode).isEqualTo(ControlMode.Blind)
+        assertThat(viewModel.uiState.value.preferences.lastControlMode).isEqualTo(ControlMode.Blind)
+    }
+
+    @Test
+    fun `快速连续 toggleControlMode 会基于最新 UI 状态翻转`() = runTest {
+        val settingsRepository = DelayedControlModeSettingsRepository(
+            initialPreferences = UserPreferences(lastControlMode = ControlMode.Button),
+        )
+        val viewModel = MainViewModel(
+            remoteRepository = FakeRemoteRepository(),
+            settingsRepository = settingsRepository,
+            screenshotSaver = FakeScreenshotSaver(),
+            volumeKeyActionResolver = VolumeKeyActionResolver(),
+        )
+
+        advanceUntilIdle()
+        viewModel.toggleControlMode()
+        assertThat(viewModel.uiState.value.currentControlMode).isEqualTo(ControlMode.Blind)
+
+        viewModel.toggleControlMode()
+        assertThat(viewModel.uiState.value.currentControlMode).isEqualTo(ControlMode.Button)
+
+        advanceUntilIdle()
+        assertThat(settingsRepository.requestedControlModes).containsExactly(
+            ControlMode.Blind,
+            ControlMode.Button,
+        ).inOrder()
+
+        settingsRepository.emitPendingPreferences()
+        advanceUntilIdle()
+
+        assertThat(viewModel.uiState.value.currentControlMode).isEqualTo(ControlMode.Button)
+        assertThat(viewModel.uiState.value.preferences.lastControlMode).isEqualTo(ControlMode.Button)
     }
 
     @Test
@@ -799,21 +1208,29 @@ private class FakeRemoteRepository(
 
 private class FakeSettingsRepository(
     initialPreferences: UserPreferences,
-    private val throwOnUpdateLastHost: Boolean = false,
+    private val throwOnRememberSuccessfulConnection: Boolean = false,
 ) : SettingsRepository {
     private val mutablePreferences = MutableStateFlow(initialPreferences)
-    var lastUpdatedHost: String? = null
-    var updateLastHostCallCount: Int = 0
+    var lastRememberedConnection: String? = null
+    var rememberSuccessfulConnectionCallCount: Int = 0
 
     override val preferencesFlow: Flow<UserPreferences> = mutablePreferences.asStateFlow()
 
-    override suspend fun updateLastHost(value: String) {
-        updateLastHostCallCount += 1
-        if (throwOnUpdateLastHost) {
+    override suspend fun rememberSuccessfulConnection(baseUrl: String) {
+        rememberSuccessfulConnectionCallCount += 1
+        if (throwOnRememberSuccessfulConnection) {
             throw IllegalStateException("persist failed")
         }
-        lastUpdatedHost = value
-        mutablePreferences.value = mutablePreferences.value.copy(lastHost = value)
+        lastRememberedConnection = baseUrl
+        val endpoint = KoreaderHttpClient.parseHostPort(baseUrl)
+        val updatedRecentHosts = listOf(endpoint.hostPort) +
+            mutablePreferences.value.recentHosts.filterNot { it == endpoint.hostPort }
+        mutablePreferences.value = mutablePreferences.value.copy(
+            lastHost = endpoint.host,
+            lastPort = endpoint.port,
+            preferredSubnetPrefix = ipv4PrefixOrNull(endpoint.host) ?: mutablePreferences.value.preferredSubnetPrefix,
+            recentHosts = updatedRecentHosts.take(8),
+        )
     }
 
     override suspend fun updateDarkTheme(value: Boolean) {
@@ -826,6 +1243,62 @@ private class FakeSettingsRepository(
 
     override suspend fun updateInvertVolumeKeys(value: Boolean) {
         mutablePreferences.value = mutablePreferences.value.copy(invertVolumeKeys = value)
+    }
+
+    override suspend fun updateLastControlMode(mode: ControlMode) {
+        mutablePreferences.value = mutablePreferences.value.copy(lastControlMode = mode)
+    }
+
+    private fun ipv4PrefixOrNull(host: String): String? {
+        val segments = host.split(".")
+        if (segments.size != 4) return null
+        if (segments.any { segment ->
+                segment.isEmpty() ||
+                    segment.length > 3 ||
+                    segment.any { !it.isDigit() } ||
+                    segment.toInt() !in 0..255
+            }
+        ) {
+            return null
+        }
+        return segments.take(3).joinToString(separator = ".")
+    }
+}
+
+private class DelayedControlModeSettingsRepository(
+    initialPreferences: UserPreferences,
+) : SettingsRepository {
+    private val mutablePreferences = MutableStateFlow(initialPreferences)
+    private var pendingPreferences = initialPreferences
+
+    val requestedControlModes = mutableListOf<ControlMode>()
+
+    override val preferencesFlow: Flow<UserPreferences> = mutablePreferences.asStateFlow()
+
+    override suspend fun rememberSuccessfulConnection(baseUrl: String) = Unit
+
+    override suspend fun updateDarkTheme(value: Boolean) {
+        pendingPreferences = pendingPreferences.copy(darkTheme = value)
+        mutablePreferences.value = pendingPreferences
+    }
+
+    override suspend fun updateVolumeKeysEnabled(value: Boolean) {
+        pendingPreferences = pendingPreferences.copy(volumeKeysEnabled = value)
+        mutablePreferences.value = pendingPreferences
+    }
+
+    override suspend fun updateInvertVolumeKeys(value: Boolean) {
+        pendingPreferences = pendingPreferences.copy(invertVolumeKeys = value)
+        mutablePreferences.value = pendingPreferences
+    }
+
+    override suspend fun updateLastControlMode(mode: ControlMode) {
+        requestedControlModes += mode
+        pendingPreferences = pendingPreferences.copy(lastControlMode = mode)
+    }
+
+    fun emitPendingPreferences() {
+        mutablePreferences.value = pendingPreferences
     }
 }
 

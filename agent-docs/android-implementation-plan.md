@@ -20,8 +20,11 @@
 - [x] 高频翻页动作已拆出独立节流通道，不再依赖全局 `isBusy`
 - [x] 首页已改为遥控器式布局，新增太阳/月亮主题切换入口、拟物化按钮和小字说明
 - [x] `Remote` 首页已按 `Compact / Regular / Tall` 三档高度规则重排，目标是在 `16:9` 到 `21:9` 竖屏下首屏完整显示
+- [x] 智能连接页已完成：最近连接记录、独立端口输入、默认端口记忆、网段前缀辅助与尾段补全已接通
+- [x] 盲操模式已完成：按钮 / 盲操双模式切换、独立手势页、中心短提示与轻触感反馈已接通
+- [x] 按钮视觉模型已统一为“整块同色 + 图标上方 + 标题居中”，去掉左右双色切割和局部异色块
 - [ ] GitHub Actions 需要重新编译验证本轮 UI 与交互改动
-- [ ] 真机还需回归验证：音量键翻页、连续快速点按、首页主题切换、设置同步
+- [ ] 真机还需回归验证：音量键翻页、连续快速点按、首页主题切换、设置同步、盲操模式、智能连接页
 
 ---
 
@@ -1270,6 +1273,77 @@ android {
 4. 下载 release APK 并在设备安装验证
 ```
 
+## Task 9: 实现智能连接页与局域网记忆
+
+**Files:**
+- Modify: `D:/github/koreader_remote_turnpages/android-app/app/src/main/java/io/github/hugo1120/koreaderremote/domain/model/UserPreferences.kt`
+- Modify: `D:/github/koreader_remote_turnpages/android-app/app/src/main/java/io/github/hugo1120/koreaderremote/data/settings/DataStoreSettingsRepository.kt`
+- Modify: `D:/github/koreader_remote_turnpages/android-app/app/src/main/java/io/github/hugo1120/koreaderremote/ui/MainViewModel.kt`
+- Modify: `D:/github/koreader_remote_turnpages/android-app/app/src/main/java/io/github/hugo1120/koreaderremote/ui/state/MainUiState.kt`
+- Modify: `D:/github/koreader_remote_turnpages/android-app/app/src/main/java/io/github/hugo1120/koreaderremote/ui/screen/ConnectScreen.kt`
+- Modify: `D:/github/koreader_remote_turnpages/android-app/app/src/main/java/io/github/hugo1120/koreaderremote/data/network/KoreaderHttpClient.kt`
+- Test: `D:/github/koreader_remote_turnpages/android-app/app/src/test/java/io/github/hugo1120/koreaderremote/data/settings/DataStoreSettingsRepositoryTest.kt`
+- Test: `D:/github/koreader_remote_turnpages/android-app/app/src/test/java/io/github/hugo1120/koreaderremote/ui/MainViewModelTest.kt`
+- Test: `D:/github/koreader_remote_turnpages/android-app/app/src/test/java/io/github/hugo1120/koreaderremote/data/network/KoreaderHttpClientTest.kt`
+
+- [x] 扩展偏好模型，新增 `lastPort`、`recentHosts`、`preferredSubnetPrefix`
+- [x] 为 DataStore 默认值与更新逻辑补单测，覆盖默认端口 `8080`、最近记录顺序和前缀恢复
+- [x] 在连接输入链路中新增“尾段补全”规则：当输入仅为数字且存在最近前缀时，自动补成完整 host
+- [x] 将端口拆成独立输入状态，不再只依赖地址字符串携带端口
+- [x] 在连接成功后更新：
+  - `lastHost`
+  - `lastPort`
+  - `recentHosts`
+  - `preferredSubnetPrefix`
+- [x] 在连接页展示最近记录区，点击后直接回填地址和端口
+- [x] 在连接页展示当前常用网段提示，例如 `192.168.10.*`
+- [x] 同步收口连接页按钮视觉，避免出现左右双色切割；连接页主按钮也采用统一单色风格
+- [ ] 回归验证：
+  - 输入完整地址 + 默认端口
+  - 输入完整地址 + 自定义端口
+  - 输入尾段数字时自动补全
+  - 点击最近记录直接连接
+
+## Task 10: 实现按钮 / 盲操双模式与手势翻页
+
+**Files:**
+- Modify: `D:/github/koreader_remote_turnpages/android-app/app/src/main/java/io/github/hugo1120/koreaderremote/domain/model/UserPreferences.kt`
+- Modify: `D:/github/koreader_remote_turnpages/android-app/app/src/main/java/io/github/hugo1120/koreaderremote/data/settings/DataStoreSettingsRepository.kt`
+- Modify: `D:/github/koreader_remote_turnpages/android-app/app/src/main/java/io/github/hugo1120/koreaderremote/ui/MainViewModel.kt`
+- Modify: `D:/github/koreader_remote_turnpages/android-app/app/src/main/java/io/github/hugo1120/koreaderremote/ui/state/MainUiState.kt`
+- Modify: `D:/github/koreader_remote_turnpages/android-app/app/src/main/java/io/github/hugo1120/koreaderremote/MainActivity.kt`
+- Modify: `D:/github/koreader_remote_turnpages/android-app/app/src/main/java/io/github/hugo1120/koreaderremote/ui/screen/RemoteScreen.kt`
+- Create: `D:/github/koreader_remote_turnpages/android-app/app/src/main/java/io/github/hugo1120/koreaderremote/ui/screen/BlindControlScreen.kt`
+- Create: `D:/github/koreader_remote_turnpages/android-app/app/src/main/java/io/github/hugo1120/koreaderremote/platform/input/SwipePageTurnDetector.kt`
+- Test: `D:/github/koreader_remote_turnpages/android-app/app/src/test/java/io/github/hugo1120/koreaderremote/ui/MainViewModelTest.kt`
+- Test: `D:/github/koreader_remote_turnpages/android-app/app/src/test/java/io/github/hugo1120/koreaderremote/platform/input/SwipePageTurnDetectorTest.kt`
+
+- [x] 扩展偏好模型，新增“上次使用控制模式”字段
+- [x] 在 ViewModel 中加入 `Button` / `Blind` 模式切换状态，并在连接成功后恢复上次模式
+- [x] 新增独立的 `BlindControlScreen`，只承载手势翻页，不承载复杂工具按钮
+- [x] 新增 `SwipePageTurnDetector`，统一手势判定规则：
+  - 向右 / 向下 -> 下一页
+  - 向左 / 向上 -> 上一页
+  - 只识别单指
+  - 有最小位移阈值
+  - 有边缘安全区
+- [x] 在按钮页顶部加入模式切换器：`按钮` / `盲操`
+- [x] 同步修正按钮模式页视觉：
+  - 按钮整体为单一主底色
+  - 图标改为上方居中
+  - 标题居中
+  - 不再保留左右双色切割和左侧半张色块
+- [x] 在盲操页加入轻反馈：
+  - 触发后中心短提示
+  - 可选轻震动
+- [x] 保持音量键翻页和按钮翻页、盲操翻页共用同一高频通道，避免行为分叉
+- [ ] 回归验证：
+  - 从按钮模式切到盲操模式
+  - 退出重进后恢复上次模式
+  - 上下左右四个方向映射正确
+  - 边缘区域不和系统返回手势冲突
+  - 音量键与盲操模式共存时行为一致
+
 ## 自检
 
 ### 覆盖性检查
@@ -1281,6 +1355,8 @@ android {
 - 旋转、全刷、休眠、截图：Task 2、Task 5、Task 6
 - GitHub 自动产 APK：Task 7
 - Release 签名：Task 8
+- 智能连接页与局域网记忆：Task 9
+- 按钮 / 盲操双模式：Task 10
 
 ### 占位项检查
 

@@ -60,6 +60,24 @@ class KoreaderHttpClientTest {
     }
 
     @Test
+    fun `parseHostPort uses same normalize rule with default port`() {
+        val endpoint = KoreaderHttpClient.parseHostPort("192.168.1.88")
+
+        assertThat(endpoint.host).isEqualTo("192.168.1.88")
+        assertThat(endpoint.port).isEqualTo(8080)
+        assertThat(endpoint.hostPort).isEqualTo("192.168.1.88:8080")
+    }
+
+    @Test
+    fun `parseHostPort keeps custom port`() {
+        val endpoint = KoreaderHttpClient.parseHostPort("https://192.168.1.88:18080")
+
+        assertThat(endpoint.host).isEqualTo("192.168.1.88")
+        assertThat(endpoint.port).isEqualTo(18080)
+        assertThat(endpoint.hostPort).isEqualTo("192.168.1.88:18080")
+    }
+
+    @Test
     fun `next page uses plus one endpoint`() = runTest {
         server.enqueue(MockResponse().setResponseCode(200))
         val client = KoreaderHttpClient(

@@ -2,6 +2,7 @@ package io.github.hugo1120.koreaderremote.ui.screen
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -11,9 +12,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.weight
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBack
@@ -24,7 +25,6 @@ import androidx.compose.material.icons.rounded.LightMode
 import androidx.compose.material.icons.rounded.PhotoCamera
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.ScreenRotationAlt
-import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.VolumeUp
 import androidx.compose.material.icons.rounded.Wifi
 import androidx.compose.material.icons.rounded.WifiOff
@@ -40,9 +40,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import io.github.hugo1120.koreaderremote.domain.model.ControlMode
 import io.github.hugo1120.koreaderremote.domain.model.RemoteAction
+import io.github.hugo1120.koreaderremote.ui.component.ControlModeSwitcher
 import io.github.hugo1120.koreaderremote.ui.component.RemoteActionButton
 import io.github.hugo1120.koreaderremote.ui.component.RemoteActionEmphasis
 import io.github.hugo1120.koreaderremote.ui.state.MainUiState
@@ -56,6 +59,7 @@ fun RemoteScreen(
     onOpenSettings: () -> Unit,
     onDisconnect: () -> Unit,
     onToggleTheme: () -> Unit,
+    onModeSelected: (ControlMode) -> Unit,
 ) {
     BoxWithConstraints(
         modifier = Modifier
@@ -69,7 +73,7 @@ fun RemoteScreen(
             Alignment.TopCenter
         }
 
-        androidx.compose.foundation.layout.Box(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(
@@ -88,6 +92,7 @@ fun RemoteScreen(
                     state = state,
                     layout = layout,
                     onToggleTheme = onToggleTheme,
+                    onModeSelected = onModeSelected,
                 )
 
                 RemoteActionButton(
@@ -189,6 +194,7 @@ private fun HeaderCard(
     state: MainUiState,
     layout: RemoteLayoutSpec,
     onToggleTheme: () -> Unit,
+    onModeSelected: (ControlMode) -> Unit,
 ) {
     Card(
         modifier = Modifier
@@ -209,21 +215,31 @@ private fun HeaderCard(
                 horizontal = layout.headerPaddingHorizontalDp.dp,
                 vertical = layout.headerPaddingVerticalDp.dp,
             ),
-            verticalArrangement = Arrangement.spacedBy(
-                if (layout.heightBand == RemoteHeightBand.Compact) 6.dp else 8.dp,
-            ),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(
-                    text = "KOReader Remote",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                    maxLines = 1,
-                )
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    Text(
+                        text = "KOReader Remote",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                        maxLines = 1,
+                    )
+                    Text(
+                        text = state.baseUrl.removePrefix("http://").removePrefix("https://"),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
                 FilledIconButton(
                     onClick = onToggleTheme,
                     modifier = Modifier.size(layout.bottomButtonHeightDp.dp),
@@ -238,35 +254,44 @@ private fun HeaderCard(
                     )
                 }
             }
-            Text(
-                text = state.baseUrl.removePrefix("http://").removePrefix("https://"),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
+
+            ControlModeSwitcher(
+                selectedMode = state.currentControlMode,
+                onModeSelected = onModeSelected,
+                enabled = !state.isBusy,
             )
-            Text(
-                text = state.statusMessage.ifBlank { "连接稳定" },
-                style = MaterialTheme.typography.bodyMedium,
-                color = if (state.isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
-                maxLines = layout.headerStatusMaxLines,
-                overflow = TextOverflow.Ellipsis,
-            )
+
             Row(
+                modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically,
             ) {
                 StatusPill(
                     icon = if (state.isConnected) Icons.Rounded.Wifi else Icons.Rounded.WifiOff,
                     text = if (state.isConnected) "已连接" else "未连接",
                     layout = layout,
+                    modifier = Modifier.weight(1f),
                 )
                 StatusPill(
                     icon = Icons.Rounded.VolumeUp,
                     text = if (state.preferences.volumeKeysEnabled) "音量键开启" else "音量键关闭",
                     layout = layout,
+                    modifier = Modifier.weight(1f),
                 )
             }
+
+            Text(
+                text = state.statusMessage.ifBlank { "控制就绪" },
+                style = MaterialTheme.typography.bodyMedium,
+                textAlign = TextAlign.Center,
+                color = if (state.isError) {
+                    MaterialTheme.colorScheme.error
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                },
+                modifier = Modifier.fillMaxWidth(),
+                maxLines = layout.headerStatusMaxLines,
+                overflow = TextOverflow.Ellipsis,
+            )
         }
     }
 }
@@ -276,8 +301,10 @@ private fun StatusPill(
     icon: ImageVector,
     text: String,
     layout: RemoteLayoutSpec,
+    modifier: Modifier = Modifier,
 ) {
     Surface(
+        modifier = modifier,
         color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.72f),
         contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
         shape = MaterialTheme.shapes.large,
@@ -287,7 +314,7 @@ private fun StatusPill(
                 horizontal = layout.chipHorizontalPaddingDp.dp,
                 vertical = layout.chipVerticalPaddingDp.dp,
             ),
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(
@@ -299,6 +326,7 @@ private fun StatusPill(
                 text = text,
                 style = MaterialTheme.typography.labelMedium,
                 maxLines = 1,
+                modifier = Modifier.padding(start = 6.dp),
             )
         }
     }

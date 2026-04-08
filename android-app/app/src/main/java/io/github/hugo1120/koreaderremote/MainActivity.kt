@@ -12,9 +12,11 @@ import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.hugo1120.koreaderremote.app.KOReaderApp
 import io.github.hugo1120.koreaderremote.domain.model.AppScreen
+import io.github.hugo1120.koreaderremote.domain.model.ControlMode
 import io.github.hugo1120.koreaderremote.platform.input.HardwareButton
 import io.github.hugo1120.koreaderremote.ui.MainViewModel
 import io.github.hugo1120.koreaderremote.ui.MainViewModelFactory
+import io.github.hugo1120.koreaderremote.ui.screen.BlindControlScreen
 import io.github.hugo1120.koreaderremote.ui.screen.ConnectScreen
 import io.github.hugo1120.koreaderremote.ui.screen.RemoteScreen
 import io.github.hugo1120.koreaderremote.ui.screen.SettingsScreen
@@ -35,21 +37,37 @@ class MainActivity : ComponentActivity() {
                         AppScreen.Connect -> ConnectScreen(
                             state = state,
                             onHostChanged = viewModel::onHostChanged,
+                            onPortChanged = viewModel::onPortChanged,
+                            onRecentHostClick = viewModel::onRecentHostSelected,
                             onConnectClick = viewModel::connect,
                             onOpenSettings = viewModel::openSettings,
                         )
 
-                        AppScreen.Remote -> RemoteScreen(
-                            state = state,
-                            onAction = viewModel::sendAction,
-                            onRotate = viewModel::toggleRotation,
-                            onScreenshot = viewModel::takeScreenshot,
-                            onOpenSettings = viewModel::openSettings,
-                            onDisconnect = viewModel::disconnect,
-                            onToggleTheme = {
-                                viewModel.setDarkTheme(!state.preferences.darkTheme)
-                            },
-                        )
+                        AppScreen.Remote -> {
+                            if (state.currentControlMode == ControlMode.Blind) {
+                                BlindControlScreen(
+                                    state = state,
+                                    onAction = viewModel::sendAction,
+                                    onModeSelected = viewModel::setControlMode,
+                                    onToggleTheme = {
+                                        viewModel.setDarkTheme(!state.preferences.darkTheme)
+                                    },
+                                )
+                            } else {
+                                RemoteScreen(
+                                    state = state,
+                                    onAction = viewModel::sendAction,
+                                    onRotate = viewModel::toggleRotation,
+                                    onScreenshot = viewModel::takeScreenshot,
+                                    onOpenSettings = viewModel::openSettings,
+                                    onDisconnect = viewModel::disconnect,
+                                    onToggleTheme = {
+                                        viewModel.setDarkTheme(!state.preferences.darkTheme)
+                                    },
+                                    onModeSelected = viewModel::setControlMode,
+                                )
+                            }
+                        }
 
                         AppScreen.Settings -> SettingsScreen(
                             state = state,

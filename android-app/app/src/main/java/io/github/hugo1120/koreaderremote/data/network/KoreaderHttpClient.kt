@@ -72,6 +72,12 @@ class KoreaderHttpClient(
         private const val SET_ROTATION_PREFIX = "/koreader/event/SetRotationMode"
         private const val SCREENSHOT_PATH = "/koreader/device/screen/bb"
 
+        data class ParsedHostPort(
+            val host: String,
+            val port: Int,
+            val hostPort: String,
+        )
+
         fun normalizeBaseUrl(input: String): String {
             val rawInput = input.trim()
             require(rawInput.isNotEmpty()) { "base url is blank" }
@@ -88,8 +94,25 @@ class KoreaderHttpClient(
 
             val scheme = (uri.scheme ?: "http").lowercase()
             val port = if (uri.port == -1) DEFAULT_KOREADER_PORT else uri.port
-            val formattedHost = if (host.contains(":") && !host.startsWith("[")) "[$host]" else host
+            val formattedHost = formatHost(host)
             return "$scheme://$formattedHost:$port"
+        }
+
+        fun parseHostPort(input: String): ParsedHostPort {
+            val normalizedBaseUrl = normalizeBaseUrl(input)
+            val uri = URI(normalizedBaseUrl)
+            val host = uri.host ?: extractHostFromAuthority(uri.rawAuthority)
+            require(!host.isNullOrBlank()) { "invalid base url: $input" }
+            val port = if (uri.port == -1) DEFAULT_KOREADER_PORT else uri.port
+            return ParsedHostPort(
+                host = host,
+                port = port,
+                hostPort = formatHostPort(host, port),
+            )
+        }
+
+        fun formatHostPort(host: String, port: Int): String {
+            return "${formatHost(host)}:$port"
         }
 
         private fun extractHostFromAuthority(authority: String?): String? {
@@ -101,6 +124,10 @@ class KoreaderHttpClient(
             } else {
                 withoutUserInfo.substringBefore(":")
             }
+        }
+
+        private fun formatHost(host: String): String {
+            return if (host.contains(":") && !host.startsWith("[")) "[$host]" else host
         }
     }
 }
