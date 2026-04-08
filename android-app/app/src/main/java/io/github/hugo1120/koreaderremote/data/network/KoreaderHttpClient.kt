@@ -17,6 +17,12 @@ class KoreaderHttpClient(
 ) {
     private val normalizedBaseUrl = normalizeBaseUrl(baseUrl)
 
+    data class ParsedHostPort(
+        val host: String,
+        val port: Int,
+        val hostPort: String,
+    )
+
     suspend fun ping(): Boolean = execute(PING_PATH)
 
     suspend fun send(action: RemoteAction): Boolean = execute(action.endpointPath)
@@ -71,12 +77,6 @@ class KoreaderHttpClient(
         private const val PING_PATH = "/koreader/event/GotoViewRel/0"
         private const val SET_ROTATION_PREFIX = "/koreader/event/SetRotationMode"
         private const val SCREENSHOT_PATH = "/koreader/device/screen/bb"
-
-        data class ParsedHostPort(
-            val host: String,
-            val port: Int,
-            val hostPort: String,
-        )
 
         fun normalizeBaseUrl(input: String): String {
             val rawInput = input.trim()
