@@ -454,6 +454,63 @@ class MainViewModelTest {
     }
 
     @Test
+    fun `older page turn response does not override latest status`() = runTest {
+        val baseUrl = "http://192.168.1.88:8080"
+        var now = 1_000L
+        val firstGate = CompletableDeferred<Unit>()
+        val secondGate = CompletableDeferred<Unit>()
+        var sendInvocation = 0
+        val remoteRepository = FakeRemoteRepository(
+            sendBehavior = { _, _ ->
+                sendInvocation += 1
+                when (sendInvocation) {
+                    1 -> {
+                        firstGate.await()
+                        Result.failure(IllegalStateException("first failed"))
+                    }
+
+                    2 -> {
+                        secondGate.await()
+                        Result.success(Unit)
+                    }
+
+                    else -> Result.success(Unit)
+                }
+            },
+        )
+        val viewModel = MainViewModel(
+            remoteRepository = remoteRepository,
+            settingsRepository = FakeSettingsRepository(initialPreferences = UserPreferences()),
+            screenshotSaver = FakeScreenshotSaver(),
+            volumeKeyActionResolver = VolumeKeyActionResolver(),
+            pageTurnRateLimiter = PageTurnRateLimiter(
+                minimumIntervalMillis = 100L,
+                nowMillis = { now },
+            ),
+        )
+
+        advanceUntilIdle()
+        viewModel.seedConnectedState(baseUrl)
+
+        viewModel.sendAction(RemoteAction.NextPage)
+        advanceUntilIdle()
+        now = 1_100L
+        viewModel.sendAction(RemoteAction.NextPage)
+        advanceUntilIdle()
+
+        secondGate.complete(Unit)
+        advanceUntilIdle()
+        assertThat(viewModel.uiState.value.statusMessage).isEqualTo("已发送：下一页")
+        assertThat(viewModel.uiState.value.isError).isFalse()
+
+        firstGate.complete(Unit)
+        advanceUntilIdle()
+
+        assertThat(viewModel.uiState.value.statusMessage).isEqualTo("已发送：下一页")
+        assertThat(viewModel.uiState.value.isError).isFalse()
+    }
+
+    @Test
     fun `toggle rotation success updates rotation mode and status`() = runTest {
         val baseUrl = "http://192.168.1.88:8080"
         val settingsRepository = FakeSettingsRepository(

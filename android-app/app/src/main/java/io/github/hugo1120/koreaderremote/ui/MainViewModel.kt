@@ -30,6 +30,7 @@ class MainViewModel(
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(MainUiState())
     val uiState: StateFlow<MainUiState> = _uiState.asStateFlow()
+    private var latestPageTurnRequestToken: Long = 0L
 
     init {
         viewModelScope.launch {
@@ -208,22 +209,28 @@ class MainViewModel(
             return
         }
 
+        latestPageTurnRequestToken += 1
+        val requestToken = latestPageTurnRequestToken
         viewModelScope.launch {
             remoteRepository.send(currentState.baseUrl, action)
                 .onSuccess {
-                    _uiState.update { state ->
-                        state.copy(
-                            isError = false,
-                            statusMessage = actionSuccessMessage(action),
-                        )
+                    if (requestToken == latestPageTurnRequestToken) {
+                        _uiState.update { state ->
+                            state.copy(
+                                isError = false,
+                                statusMessage = actionSuccessMessage(action),
+                            )
+                        }
                     }
                 }
                 .onFailure {
-                    _uiState.update { state ->
-                        state.copy(
-                            isError = true,
-                            statusMessage = actionFailureMessage(action),
-                        )
+                    if (requestToken == latestPageTurnRequestToken) {
+                        _uiState.update { state ->
+                            state.copy(
+                                isError = true,
+                                statusMessage = actionFailureMessage(action),
+                            )
+                        }
                     }
                 }
         }

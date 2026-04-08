@@ -7,7 +7,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Card
@@ -32,11 +32,13 @@ enum class RemoteActionEmphasis {
 @Composable
 fun RemoteActionButton(
     title: String,
-    subtitle: String,
+    subtitle: String? = null,
     icon: ImageVector,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     emphasis: RemoteActionEmphasis = RemoteActionEmphasis.Secondary,
+    minHeightDp: Int = if (emphasis == RemoteActionEmphasis.Primary) 132 else 98,
+    iconSizeDp: Int = if (emphasis == RemoteActionEmphasis.Primary) 28 else 22,
     onClick: () -> Unit,
 ) {
     val shape = MaterialTheme.shapes.extraLarge
@@ -61,7 +63,10 @@ fun RemoteActionButton(
     } else {
         MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.75f)
     }
-    val minHeight = if (primary) 132.dp else 98.dp
+    val horizontalPadding = if (primary) 18.dp else 14.dp
+    val verticalPadding = if (primary) 14.dp else 10.dp
+    val itemSpacing = if (primary) 14.dp else 10.dp
+    val iconContainerPadding = if (primary) 12.dp else 8.dp
     val gradient = if (primary) {
         Brush.verticalGradient(
             listOf(
@@ -97,27 +102,27 @@ fun RemoteActionButton(
         Row(
             modifier = Modifier
                 .background(gradient)
-                .heightIn(min = minHeight)
-                .padding(horizontal = 18.dp, vertical = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
+                .height(minHeightDp.dp)
+                .padding(horizontal = horizontalPadding, vertical = verticalPadding),
+            horizontalArrangement = Arrangement.spacedBy(itemSpacing),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Box(
                 modifier = Modifier
                     .clip(MaterialTheme.shapes.large)
                     .background(iconContainerColor)
-                    .padding(12.dp),
+                    .padding(iconContainerPadding),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
                     imageVector = icon,
                     contentDescription = title,
-                    modifier = Modifier.size(if (primary) 28.dp else 22.dp),
+                    modifier = Modifier.size(iconSizeDp.dp),
                 )
             }
             Column(
                 verticalArrangement = Arrangement.spacedBy(4.dp),
-                horizontalAlignment = if (primary) Alignment.Start else Alignment.Start,
+                horizontalAlignment = Alignment.Start,
             ) {
                 Text(
                     text = title,
@@ -126,13 +131,15 @@ fun RemoteActionButton(
                     } else {
                         MaterialTheme.typography.titleMedium
                     },
-                    textAlign = if (primary) TextAlign.Start else TextAlign.Start,
+                    textAlign = TextAlign.Start,
                 )
-                Text(
-                    text = subtitle,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+                if (!subtitle.isNullOrBlank()) {
+                    Text(
+                        text = subtitle,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
         }
     }
