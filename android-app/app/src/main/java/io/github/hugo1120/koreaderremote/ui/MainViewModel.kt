@@ -7,6 +7,7 @@ import io.github.hugo1120.koreaderremote.data.settings.SettingsRepository
 import io.github.hugo1120.koreaderremote.domain.model.AppScreen
 import io.github.hugo1120.koreaderremote.domain.model.RemoteAction
 import io.github.hugo1120.koreaderremote.platform.input.HardwareButton
+import io.github.hugo1120.koreaderremote.platform.input.PageTurnRateLimiter
 import io.github.hugo1120.koreaderremote.platform.input.VolumeKeyActionResolver
 import io.github.hugo1120.koreaderremote.platform.storage.ScreenshotSaver
 import io.github.hugo1120.koreaderremote.ui.state.MainUiState
@@ -25,6 +26,7 @@ class MainViewModel(
     private val settingsRepository: SettingsRepository,
     private val screenshotSaver: ScreenshotSaver,
     private val volumeKeyActionResolver: VolumeKeyActionResolver,
+    private val pageTurnRateLimiter: PageTurnRateLimiter = PageTurnRateLimiter(),
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(MainUiState())
     val uiState: StateFlow<MainUiState> = _uiState.asStateFlow()
@@ -135,6 +137,11 @@ class MainViewModel(
     }
 
     fun sendAction(action: RemoteAction) {
+        if (action == RemoteAction.PreviousPage || action == RemoteAction.NextPage) {
+            sendPageTurnAction(action)
+            return
+        }
+
         val currentState = uiState.value
         if (currentState.isBusy) {
             return
@@ -173,6 +180,47 @@ class MainViewModel(
                     _uiState.update { state ->
                         state.copy(
                             isBusy = false,
+                            isError = true,
+                            statusMessage = actionFailureMessage(action),
+                        )
+                    }
+                }
+        }
+    }
+
+    private fun sendPageTurnAction(action: RemoteAction) {
+        val currentState = uiState.value
+        if (currentState.isBusy) {
+            return
+        }
+
+        if (!currentState.isConnected || currentState.baseUrl.isBlank()) {
+            _uiState.update { state ->
+                state.copy(
+                    isError = true,
+                    statusMessage = "未连接设备",
+                )
+            }
+            return
+        }
+
+        if (!pageTurnRateLimiter.tryAcquire()) {
+            return
+        }
+
+        viewModelScope.launch {
+            remoteRepository.send(currentState.baseUrl, action)
+                .onSuccess {
+                    _uiState.update { state ->
+                        state.copy(
+                            isError = false,
+                            statusMessage = actionSuccessMessage(action),
+                        )
+                    }
+                }
+                .onFailure {
+                    _uiState.update { state ->
+                        state.copy(
                             isError = true,
                             statusMessage = actionFailureMessage(action),
                         )

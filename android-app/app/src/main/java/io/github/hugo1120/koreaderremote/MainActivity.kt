@@ -46,6 +46,9 @@ class MainActivity : ComponentActivity() {
                             onScreenshot = viewModel::takeScreenshot,
                             onOpenSettings = viewModel::openSettings,
                             onDisconnect = viewModel::disconnect,
+                            onToggleTheme = {
+                                viewModel.setDarkTheme(!state.preferences.darkTheme)
+                            },
                         )
 
                         AppScreen.Settings -> SettingsScreen(

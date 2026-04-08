@@ -53,7 +53,7 @@ class DataStoreSettingsRepository(
                 UserPreferences(
                     lastHost = preferences[Keys.lastHost].orEmpty(),
                     darkTheme = preferences[Keys.darkTheme] ?: false,
-                    volumeKeysEnabled = preferences[Keys.volumeKeysEnabled] ?: false,
+                    volumeKeysEnabled = preferences[Keys.volumeKeysEnabled] ?: true,
                     invertVolumeKeys = preferences[Keys.invertVolumeKeys] ?: false,
                 )
             }

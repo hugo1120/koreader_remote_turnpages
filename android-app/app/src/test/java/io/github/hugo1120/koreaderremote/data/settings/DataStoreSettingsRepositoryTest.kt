@@ -29,7 +29,7 @@ class DataStoreSettingsRepositoryTest {
 
         assertThat(preferences.lastHost).isEmpty()
         assertThat(preferences.darkTheme).isFalse()
-        assertThat(preferences.volumeKeysEnabled).isFalse()
+        assertThat(preferences.volumeKeysEnabled).isTrue()
         assertThat(preferences.invertVolumeKeys).isFalse()
     }
 

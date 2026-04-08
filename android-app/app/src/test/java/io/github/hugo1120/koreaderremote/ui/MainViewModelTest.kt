@@ -7,6 +7,7 @@ import io.github.hugo1120.koreaderremote.domain.model.AppScreen
 import io.github.hugo1120.koreaderremote.domain.model.RemoteAction
 import io.github.hugo1120.koreaderremote.domain.model.UserPreferences
 import io.github.hugo1120.koreaderremote.platform.input.HardwareButton
+import io.github.hugo1120.koreaderremote.platform.input.PageTurnRateLimiter
 import io.github.hugo1120.koreaderremote.platform.input.VolumeKeyActionResolver
 import io.github.hugo1120.koreaderremote.platform.storage.ScreenshotSaver
 import java.io.ByteArrayInputStream
@@ -252,6 +253,30 @@ class MainViewModelTest {
     }
 
     @Test
+    fun `hardware volume down triggers next page with default preferences`() = runTest {
+        val baseUrl = "http://192.168.1.88:8080"
+        val settingsRepository = FakeSettingsRepository(
+            initialPreferences = UserPreferences(),
+        )
+        val remoteRepository = FakeRemoteRepository()
+        val viewModel = MainViewModel(
+            remoteRepository = remoteRepository,
+            settingsRepository = settingsRepository,
+            screenshotSaver = FakeScreenshotSaver(),
+            volumeKeyActionResolver = VolumeKeyActionResolver(),
+        )
+
+        advanceUntilIdle()
+        viewModel.seedConnectedState(baseUrl)
+
+        val handled = viewModel.onHardwareButton(HardwareButton.VolumeDown)
+        advanceUntilIdle()
+
+        assertThat(handled).isTrue()
+        assertThat(remoteRepository.lastAction).isEqualTo(RemoteAction.NextPage)
+    }
+
+    @Test
     fun `hardware button returns false when volume keys disabled`() = runTest {
         val baseUrl = "http://192.168.1.88:8080"
         val settingsRepository = FakeSettingsRepository(
@@ -335,6 +360,97 @@ class MainViewModelTest {
 
         sendGate.complete(Unit)
         advanceUntilIdle()
+    }
+
+    @Test
+    fun `next page action does not lock ui while request is in flight`() = runTest {
+        val baseUrl = "http://192.168.1.88:8080"
+        val sendGate = CompletableDeferred<Unit>()
+        val remoteRepository = FakeRemoteRepository(
+            sendBehavior = { _, _ ->
+                sendGate.await()
+                Result.success(Unit)
+            },
+        )
+        val viewModel = MainViewModel(
+            remoteRepository = remoteRepository,
+            settingsRepository = FakeSettingsRepository(initialPreferences = UserPreferences()),
+            screenshotSaver = FakeScreenshotSaver(),
+            volumeKeyActionResolver = VolumeKeyActionResolver(),
+            pageTurnRateLimiter = PageTurnRateLimiter(
+                minimumIntervalMillis = 100L,
+                nowMillis = { 1_000L },
+            ),
+        )
+
+        advanceUntilIdle()
+        viewModel.seedConnectedState(baseUrl)
+        viewModel.sendAction(RemoteAction.NextPage)
+        advanceUntilIdle()
+
+        assertThat(viewModel.uiState.value.isBusy).isFalse()
+        assertThat(remoteRepository.sendCallCount).isEqualTo(1)
+
+        sendGate.complete(Unit)
+        advanceUntilIdle()
+    }
+
+    @Test
+    fun `next page action can repeat after rate limit interval`() = runTest {
+        val baseUrl = "http://192.168.1.88:8080"
+        var now = 1_000L
+        val remoteRepository = FakeRemoteRepository()
+        val viewModel = MainViewModel(
+            remoteRepository = remoteRepository,
+            settingsRepository = FakeSettingsRepository(initialPreferences = UserPreferences()),
+            screenshotSaver = FakeScreenshotSaver(),
+            volumeKeyActionResolver = VolumeKeyActionResolver(),
+            pageTurnRateLimiter = PageTurnRateLimiter(
+                minimumIntervalMillis = 100L,
+                nowMillis = { now },
+            ),
+        )
+
+        advanceUntilIdle()
+        viewModel.seedConnectedState(baseUrl)
+
+        viewModel.sendAction(RemoteAction.NextPage)
+        advanceUntilIdle()
+        now = 1_100L
+        viewModel.sendAction(RemoteAction.NextPage)
+        advanceUntilIdle()
+
+        assertThat(remoteRepository.sendCallCount).isEqualTo(2)
+        assertThat(remoteRepository.lastAction).isEqualTo(RemoteAction.NextPage)
+    }
+
+    @Test
+    fun `next page action is throttled inside rate limit interval`() = runTest {
+        val baseUrl = "http://192.168.1.88:8080"
+        var now = 1_000L
+        val remoteRepository = FakeRemoteRepository()
+        val viewModel = MainViewModel(
+            remoteRepository = remoteRepository,
+            settingsRepository = FakeSettingsRepository(initialPreferences = UserPreferences()),
+            screenshotSaver = FakeScreenshotSaver(),
+            volumeKeyActionResolver = VolumeKeyActionResolver(),
+            pageTurnRateLimiter = PageTurnRateLimiter(
+                minimumIntervalMillis = 100L,
+                nowMillis = { now },
+            ),
+        )
+
+        advanceUntilIdle()
+        viewModel.seedConnectedState(baseUrl)
+
+        viewModel.sendAction(RemoteAction.NextPage)
+        advanceUntilIdle()
+        now = 1_050L
+        viewModel.sendAction(RemoteAction.NextPage)
+        advanceUntilIdle()
+
+        assertThat(remoteRepository.sendCallCount).isEqualTo(1)
+        assertThat(viewModel.uiState.value.statusMessage).isEqualTo("已发送：下一页")
     }
 
     @Test
