@@ -6,7 +6,25 @@ on:
       - main
     tags:
       - "v*"
+    paths:
+      - "android-app/app/**"
+      - "android-app/gradle/**"
+      - "android-app/build.gradle.kts"
+      - "android-app/settings.gradle.kts"
+      - "android-app/gradle.properties"
+      - "android-app/gradlew"
+      - "android-app/gradlew.bat"
+      - ".github/workflows/android-build.yml"
   pull_request:
+    paths:
+      - "android-app/app/**"
+      - "android-app/gradle/**"
+      - "android-app/build.gradle.kts"
+      - "android-app/settings.gradle.kts"
+      - "android-app/gradle.properties"
+      - "android-app/gradlew"
+      - "android-app/gradlew.bat"
+      - ".github/workflows/android-build.yml"
   workflow_dispatch:
     inputs:
       build_release:
