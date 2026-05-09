@@ -2,7 +2,7 @@
 
 Native Android remote for KOReader, built with Kotlin + Jetpack Compose.
 
-[Back To Root README](../README.MD) | [English](#english) | [中文](#中文)
+[English](#english) | [中文](#中文)
 
 ---
 
@@ -47,14 +47,14 @@ Network -> SSH/HTTP Server
 
 ### Local Run
 
-1. Open `android-app/` in Android Studio
+1. Open this directory in Android Studio
 2. Connect an Android device or start an emulator
 3. Run the `app` module
 
 ### Local Build
 
 ```powershell
-Set-Location "D:/github/koreader_remote_turnpages/android-app"
+Set-Location "D:/github/koreader_remote_turnpages/android-version"
 ./gradlew.bat assembleDebug
 ```
 
@@ -62,7 +62,7 @@ Set-Location "D:/github/koreader_remote_turnpages/android-app"
 
 Workflow file:
 
-- [../.github/workflows/android-build.yml](../.github/workflows/android-build.yml)
+- [.github/workflows/android-build.yml](.github/workflows/android-build.yml)
 
 Triggers:
 
@@ -101,7 +101,7 @@ Release builds require these GitHub Secrets:
 - `ANDROID_KEY_ALIAS`
 - `ANDROID_KEY_PASSWORD`
 
-The workflow decodes the keystore to `android-app/release.keystore` and passes these environment variables into Gradle:
+The workflow decodes the keystore to `release.keystore` and passes these environment variables into Gradle:
 
 - `ANDROID_KEYSTORE_PATH`
 - `ANDROID_KEYSTORE_PASSWORD`
@@ -153,14 +153,14 @@ Network -> SSH/HTTP Server
 
 ### 本地运行
 
-1. 使用 Android Studio 打开 `android-app/`
+1. 使用 Android Studio 打开此目录
 2. 连接 Android 真机或启动模拟器
 3. 运行 `app` 模块
 
 ### 本地构建
 
 ```powershell
-Set-Location "D:/github/koreader_remote_turnpages/android-app"
+Set-Location "D:/github/koreader_remote_turnpages/android-version"
 ./gradlew.bat assembleDebug
 ```
 
@@ -168,7 +168,7 @@ Set-Location "D:/github/koreader_remote_turnpages/android-app"
 
 工作流文件：
 
-- [../.github/workflows/android-build.yml](../.github/workflows/android-build.yml)
+- [.github/workflows/android-build.yml](.github/workflows/android-build.yml)
 
 触发条件：
 
@@ -207,7 +207,7 @@ Release 构建依赖以下 GitHub Secrets：
 - `ANDROID_KEY_ALIAS`
 - `ANDROID_KEY_PASSWORD`
 
-工作流会把 keystore 解码到 `android-app/release.keystore`，并通过以下环境变量传给 Gradle：
+工作流会把 keystore 解码到 `release.keystore`，并通过以下环境变量传给 Gradle：
 
 - `ANDROID_KEYSTORE_PATH`
 - `ANDROID_KEYSTORE_PASSWORD`

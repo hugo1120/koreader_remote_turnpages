@@ -1,0 +1,21 @@
+# Gradle
+/.gradle/
+/build/
+/app/build/
+/local.properties
+/.cxx/
+/.externalNativeBuild/
+/captures/
+
+# Signing
+*.jks
+*.keystore
+
+# IDEs / Editor
+.idea/
+.vscode/
+*.iml
+
+# OS
+Thumbs.db
+Desktop.ini

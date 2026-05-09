@@ -1,9 +1,0 @@
-# Gradle
-/.gradle/
-/build/
-/app/build/
-/local.properties
-
-# Signing
-*.jks
-*.keystore

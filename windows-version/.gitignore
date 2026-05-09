@@ -12,7 +12,6 @@ htmlcov/
 # Build outputs
 build/
 dist/
-*.apk
 *.spec
 *.exe
 *.manifest
@@ -23,21 +22,9 @@ env/
 venv/
 ENV/
 
-# Windows app runtime files
+# Runtime files
 koreader_config.json
 screenshots/
-
-# Android / Gradle local files
-.gradle/
-.gradle-*/
-local.properties
-.cxx/
-.externalNativeBuild/
-captures/
-
-# Signing
-*.jks
-*.keystore
 
 # IDEs / Editor
 .vscode/
