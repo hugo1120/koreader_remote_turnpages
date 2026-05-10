@@ -77,6 +77,40 @@ DEFAULT_GAMEPAD_MAPPING = {
     "disconnect": ["START", "BTN_7", "BTN_6"]
 }
 
+DEFAULT_KEYBOARD_MAPPING = {
+    "next_page": ["Next", "Right", "Down"],
+    "previous_page": ["Prior", "Left", "Up"],
+    "rotate": ["F6"],
+    "refresh": ["F5"],
+    "screenshot": ["F7"],
+    "suspend": ["Escape"]
+}
+
+KEYBOARD_KEY_ALIASES = {
+    "Esc": "Escape",
+    "esc": "Escape",
+    "PageUp": "Prior",
+    "pageup": "Prior",
+    "PgUp": "Prior",
+    "pgup": "Prior",
+    "PageDown": "Next",
+    "pagedown": "Next",
+    "PgDn": "Next",
+    "pgdn": "Next",
+    "ArrowLeft": "Left",
+    "arrowleft": "Left",
+    "ArrowRight": "Right",
+    "arrowright": "Right",
+    "ArrowUp": "Up",
+    "arrowup": "Up",
+    "ArrowDown": "Down",
+    "arrowdown": "Down",
+    "PrintScreen": "Print",
+    "printscreen": "Print",
+    "PrtSc": "Print",
+    "prtsc": "Print"
+}
+
 APP_NAME = "KOReader Page Turner"
 APP_ID = "Hugo.KOReaderPageTurner"
 APP_DIR = get_app_dir()
@@ -171,6 +205,87 @@ def apply_windows_title_bar_theme(window, is_dark):
     except Exception:
         pass
 
+
+def normalize_key_name(key_name, aliases=None):
+    key = str(key_name).strip()
+    if not key:
+        return ""
+    aliases = aliases or {}
+    return aliases.get(key, aliases.get(key.lower(), key))
+
+
+def normalize_action_mapping(custom_mapping, default_mapping, aliases=None):
+    normalized = {}
+    custom_mapping = custom_mapping if isinstance(custom_mapping, dict) else {}
+
+    for action, default_keys in default_mapping.items():
+        raw_keys = custom_mapping.get(action, default_keys)
+        if isinstance(raw_keys, str):
+            keys = [raw_keys]
+        elif isinstance(raw_keys, list):
+            keys = raw_keys
+        else:
+            keys = default_keys
+
+        normalized_keys = []
+        for key in keys:
+            normalized_key = normalize_key_name(key, aliases)
+            if normalized_key and normalized_key not in normalized_keys:
+                normalized_keys.append(normalized_key)
+        normalized[action] = normalized_keys
+
+    return normalized
+
+
+def get_mapped_action(mapping, key_code, aliases=None):
+    normalized_key = normalize_key_name(key_code, aliases)
+    for action, keys in mapping.items():
+        if normalized_key in keys:
+            return action
+    return None
+
+
+def build_koreader_url(base_url, endpoint):
+    return f"{base_url.rstrip('/')}/{endpoint.lstrip('/')}"
+
+
+def ensure_success_status(response):
+    response.raise_for_status()
+    return response
+
+
+class ToolTip:
+    def __init__(self, widget, text):
+        self.widget = widget
+        self.text = text
+        self.tip_window = None
+        widget.bind("<Enter>", self.show)
+        widget.bind("<Leave>", self.hide)
+
+    def show(self, _event=None):
+        if self.tip_window or not self.text:
+            return
+        x = self.widget.winfo_rootx() + 12
+        y = self.widget.winfo_rooty() + self.widget.winfo_height() + 6
+        self.tip_window = tk.Toplevel(self.widget)
+        self.tip_window.wm_overrideredirect(True)
+        self.tip_window.wm_geometry(f"+{x}+{y}")
+        label = tk.Label(
+            self.tip_window,
+            text=self.text,
+            bg="#222222",
+            fg="#FFFFFF",
+            padx=8,
+            pady=4,
+            font=("Microsoft YaHei UI", 9)
+        )
+        label.pack()
+
+    def hide(self, _event=None):
+        if self.tip_window:
+            self.tip_window.destroy()
+            self.tip_window = None
+
 class KOReaderRemoteApp:
     def __init__(self, root):
         self.root = root
@@ -225,14 +340,8 @@ class KOReaderRemoteApp:
             print(f"pygame unavailable, gamepad disabled: {PYGAME_IMPORT_ERROR}")
         
         # === 键盘绑定 ===
-        self.root.bind('<Prior>', lambda e: self.previous_page())
-        self.root.bind('<Next>', lambda e: self.next_page())
-        self.root.bind('<Left>', lambda e: self.previous_page())
-        self.root.bind('<Right>', lambda e: self.next_page())
-        self.root.bind('<Up>', lambda e: self.previous_page())
-        self.root.bind('<Down>', lambda e: self.next_page())
+        self.root.bind('<KeyPress>', self.on_key_press)
         self.root.bind('<MouseWheel>', self.on_mouse_wheel)
-        self.root.bind('<Escape>', lambda e: self.suspend_device())
 
     def center_window(self, width, height):
         screen_width = self.root.winfo_screenwidth()
@@ -288,6 +397,7 @@ class KOReaderRemoteApp:
                                     activebackground=None,
                                     command=self.rotate_device)
         self.btn_rotate.pack(side=tk.LEFT, fill=tk.Y, padx=1)
+        ToolTip(self.btn_rotate, "旋转 (F6)")
 
         # 刷新屏幕 (Full Refresh)
         self.btn_refresh = tk.Button(self.title_bar, text="⚡", font=btn_font,
@@ -295,6 +405,7 @@ class KOReaderRemoteApp:
                                      activebackground=None,
                                      command=self.full_refresh)
         self.btn_refresh.pack(side=tk.LEFT, fill=tk.Y, padx=1)
+        ToolTip(self.btn_refresh, "全刷 (F5)")
 
         # 截图 (Screenshot)
         self.btn_screenshot = tk.Button(self.title_bar, text="📷", font=btn_font,
@@ -302,6 +413,7 @@ class KOReaderRemoteApp:
                                         activebackground=None,
                                         command=self.take_screenshot)
         self.btn_screenshot.pack(side=tk.LEFT, fill=tk.Y, padx=1)
+        ToolTip(self.btn_screenshot, "截图 (F7)")
 
         # === 2. 底部状态栏 ===
         self.status_bar = tk.Frame(self.root, height=25)
@@ -449,7 +561,15 @@ class KOReaderRemoteApp:
                     self.ip_var.set(self.config.get('last_ip', ''))
                     self.current_theme = self.config.get('theme', 'light')
                     self.always_on_top = self.config.get('always_on_top', False)
-                    self.gamepad_mapping = self.config.get('gamepad_mapping', DEFAULT_GAMEPAD_MAPPING)
+                    self.gamepad_mapping = normalize_action_mapping(
+                        self.config.get('gamepad_mapping'),
+                        DEFAULT_GAMEPAD_MAPPING
+                    )
+                    self.keyboard_mapping = normalize_action_mapping(
+                        self.config.get('keyboard_mapping'),
+                        DEFAULT_KEYBOARD_MAPPING,
+                        KEYBOARD_KEY_ALIASES
+                    )
                     print(f"配置文件加载成功: {CONFIG_FILE}")
             except Exception as e: 
                 print(f"加载配置文件失败: {e}")
@@ -459,11 +579,21 @@ class KOReaderRemoteApp:
                 
                 self.current_theme = "light"
                 self.always_on_top = False
-                self.gamepad_mapping = DEFAULT_GAMEPAD_MAPPING
+                self.gamepad_mapping = normalize_action_mapping(None, DEFAULT_GAMEPAD_MAPPING)
+                self.keyboard_mapping = normalize_action_mapping(
+                    None,
+                    DEFAULT_KEYBOARD_MAPPING,
+                    KEYBOARD_KEY_ALIASES
+                )
         else: 
             self.current_theme = "light"
             self.always_on_top = False
-            self.gamepad_mapping = DEFAULT_GAMEPAD_MAPPING
+            self.gamepad_mapping = normalize_action_mapping(None, DEFAULT_GAMEPAD_MAPPING)
+            self.keyboard_mapping = normalize_action_mapping(
+                None,
+                DEFAULT_KEYBOARD_MAPPING,
+                KEYBOARD_KEY_ALIASES
+            )
 
     def save_config(self):
         try:
@@ -471,6 +601,7 @@ class KOReaderRemoteApp:
             self.config['theme'] = self.current_theme
             self.config['always_on_top'] = self.always_on_top
             self.config['gamepad_mapping'] = getattr(self, 'gamepad_mapping', DEFAULT_GAMEPAD_MAPPING)
+            self.config['keyboard_mapping'] = getattr(self, 'keyboard_mapping', DEFAULT_KEYBOARD_MAPPING)
             self.config['window_width'] = self.root.winfo_width()
             self.config['window_height'] = self.root.winfo_height()
             with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
@@ -538,15 +669,51 @@ class KOReaderRemoteApp:
         self.connected = False
         self.show_login()
 
+    def ensure_connected(self):
+        if self.connected:
+            return True
+        self.show_log("请先连接设备", True)
+        return False
+
     def send_cmd(self, endpoint, log_text):
-        if not self.connected: return
+        if not self.ensure_connected():
+            return
         def _req():
             try:
-                requests.get(f"{self.base_url}{endpoint}", timeout=2)
+                resp = requests.get(build_koreader_url(self.base_url, endpoint), timeout=2)
+                ensure_success_status(resp)
                 self.root.after(0, lambda: self.show_log(log_text))
             except:
                 self.root.after(0, lambda: self.show_log("失败", True))
         threading.Thread(target=_req, daemon=True).start()
+
+    def trigger_action(self, action):
+        if action == "next_page":
+            self.next_page()
+        elif action == "previous_page":
+            self.previous_page()
+        elif action == "rotate":
+            self.rotate_device()
+        elif action == "refresh":
+            self.full_refresh()
+        elif action == "screenshot":
+            self.take_screenshot()
+        elif action == "suspend":
+            self.suspend_device()
+        elif action == "disconnect":
+            self.disconnect()
+
+    def on_key_press(self, event):
+        action = get_mapped_action(
+            self.keyboard_mapping,
+            event.keysym,
+            KEYBOARD_KEY_ALIASES
+        )
+        if not action:
+            return None
+
+        self.trigger_action(action)
+        return "break"
 
     def previous_page(self): self.send_cmd("/koreader/event/GotoViewRel/-1", "上一页")
     def next_page(self): self.send_cmd("/koreader/event/GotoViewRel/1", "下一页")
@@ -566,12 +733,10 @@ class KOReaderRemoteApp:
         self.send_cmd("/koreader/event/FullRefresh", "请求刷新")
 
     def take_screenshot(self):
-        if not self.connected: 
-            messagebox.showwarning("提示", "请先连接设备")
+        if not self.ensure_connected():
             return
-            
-        ip = self.ip_var.get().strip()
-        url = f"http://{ip}:8080/koreader/device/screen/bb"
+
+        url = build_koreader_url(self.base_url, "/koreader/device/screen/bb")
         
         def _shot():
             try:
@@ -590,7 +755,7 @@ class KOReaderRemoteApp:
                 # 增加超时时间到90秒，因为墨水屏渲染可能很慢
                 # Stream下载以避免 IncompleteRead
                 with session.get(url, headers=headers, stream=True, timeout=(5, 90)) as resp:
-                    resp.raise_for_status()
+                    ensure_success_status(resp)
                     
                     # 生成文件名
                     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -705,13 +870,7 @@ class KOReaderRemoteApp:
                         
                         if triggered_action:
                             print(f"-> 触发功能: {triggered_action}")
-                            if triggered_action == "next_page": self.root.after(0, self.next_page)
-                            elif triggered_action == "previous_page": self.root.after(0, self.previous_page)
-                            elif triggered_action == "rotate": self.root.after(0, self.rotate_device)
-                            elif triggered_action == "refresh": self.root.after(0, self.full_refresh)
-                            elif triggered_action == "screenshot": self.root.after(0, self.take_screenshot)
-                            elif triggered_action == "suspend": self.root.after(0, self.suspend_device)
-                            elif triggered_action == "disconnect": self.root.after(0, self.disconnect)
+                            self.root.after(0, lambda action=triggered_action: self.trigger_action(action))
                         else:
                             print("-> 未绑定功能")
 
@@ -740,13 +899,7 @@ class KOReaderRemoteApp:
         
         if cmd:
             # 在主线程执行对应操作
-            if cmd == "next_page": self.root.after(0, self.next_page)
-            elif cmd == "previous_page": self.root.after(0, self.previous_page)
-            elif cmd == "rotate": self.root.after(0, self.rotate_device)
-            elif cmd == "refresh": self.root.after(0, self.full_refresh)
-            elif cmd == "screenshot": self.root.after(0, self.take_screenshot)
-            elif cmd == "suspend": self.root.after(0, self.suspend_device)
-            elif cmd == "disconnect": self.root.after(0, self.disconnect)
+            self.root.after(0, lambda action=cmd: self.trigger_action(action))
 
     def on_close(self):
         self.gamepad_running = False

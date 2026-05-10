@@ -13,6 +13,21 @@ python -m pip install requests pygame
 python "koreader_page_turner.py"
 ```
 
+常用键盘控制在程序窗口获得焦点时生效：
+
+| 功能 | 默认按键 |
+| --- | --- |
+| 上一页 | `PageUp` / `Left` / `Up` |
+| 下一页 | `PageDown` / `Right` / `Down` |
+| 全刷 | `F5` |
+| 旋转 | `F6` |
+| 截图 | `F7` |
+| 休眠 | `Esc` |
+
+快捷键可在 `koreader_config.json` 的 `keyboard_mapping` 中自定义。源码运行时该文件在 `windows-version/`；运行打包 EXE 时该文件在 EXE 同目录。
+
+Windows 版普通控制命令会检查 KOReader HTTP 响应状态；未连接时设备动作会在状态栏提示。顶部旋转、全刷、截图按钮支持悬停提示。
+
 打包 EXE：
 
 ```powershell

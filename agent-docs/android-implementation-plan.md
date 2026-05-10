@@ -1,5 +1,7 @@
 # KOReader Android App Implementation Plan
 
+> 状态说明：这是 2026-04 阶段的历史实现计划。2026-05-09 起当前仓库已改为 `windows-version/` 与 `android-version/` 两个版本目录；本文中的 `android-app/` 路径和“保留根目录 Windows 源码”的约束已过期。当前 Android 工程入口为 `android-version/`，当前构建说明以 [../README.MD](D:/github/koreader_remote_turnpages/README.MD) 和 [../android-version/README.md](D:/github/koreader_remote_turnpages/android-version/README.md) 为准。
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** 在保留现有 Windows 桌面版源码不变的前提下，新建 `android-app/` 原生 Android 工程，完成 KOReader 移动端远程控制 App，支持音量键翻页，并通过 GitHub Actions 自动产出 APK。

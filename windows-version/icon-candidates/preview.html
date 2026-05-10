@@ -1,0 +1,527 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>KOReader Windows 图标候选</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f5f2ec;
+      --panel: #fffdfa;
+      --ink: #24211d;
+      --muted: #756f66;
+      --line: #ddd5ca;
+      --accent: #2f6f63;
+      --accent-weak: #d8eee7;
+      --toolbar: #ece7df;
+      --dark-toolbar: #25282b;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      background:
+        linear-gradient(135deg, rgba(47, 111, 99, 0.08), transparent 38%),
+        linear-gradient(315deg, rgba(141, 98, 55, 0.09), transparent 42%),
+        var(--bg);
+      font-family: "Microsoft YaHei UI", "Segoe UI", sans-serif;
+    }
+
+    main {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 34px 0 48px;
+    }
+
+    header {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 24px;
+      align-items: end;
+      margin-bottom: 26px;
+    }
+
+    h1 {
+      margin: 0 0 10px;
+      font-size: clamp(26px, 3vw, 42px);
+      font-weight: 780;
+      letter-spacing: 0;
+    }
+
+    .lead {
+      max-width: 720px;
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.7;
+      font-size: 15px;
+    }
+
+    .note {
+      justify-self: end;
+      width: min(360px, 100%);
+      padding: 14px 16px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255, 253, 250, 0.8);
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .toolbar-preview {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-bottom: 22px;
+    }
+
+    .bar {
+      display: flex;
+      align-items: center;
+      height: 34px;
+      padding: 0 7px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: var(--toolbar);
+      box-shadow: 0 10px 30px rgba(45, 40, 34, 0.08);
+    }
+
+    .bar.dark {
+      border-color: #35383b;
+      background: var(--dark-toolbar);
+      color: #f6f4ee;
+    }
+
+    .bar-title {
+      flex: 1;
+      padding-left: 8px;
+      color: currentColor;
+      font-size: 13px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .tool {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 30px;
+      height: 28px;
+      margin-right: 2px;
+      border-radius: 6px;
+      color: currentColor;
+    }
+
+    .tool.accent {
+      color: var(--accent);
+      background: var(--accent-weak);
+    }
+
+    .bar.dark .tool.accent {
+      color: #91e0ce;
+      background: rgba(145, 224, 206, 0.13);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    section {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255, 253, 250, 0.86);
+      overflow: hidden;
+    }
+
+    .section-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 16px 12px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 17px;
+      letter-spacing: 0;
+    }
+
+    .shortcut {
+      color: var(--muted);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .options {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      padding: 12px;
+    }
+
+    .option {
+      display: grid;
+      grid-template-columns: 40px 1fr;
+      gap: 10px;
+      min-height: 62px;
+      padding: 11px;
+      border: 1px solid #e8e1d8;
+      border-radius: 8px;
+      background: #fffefa;
+      align-items: center;
+    }
+
+    .option.recommended {
+      border-color: rgba(47, 111, 99, 0.5);
+      background: linear-gradient(180deg, #fffefa, #f2fbf7);
+    }
+
+    .sample {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      color: #1f2424;
+      background: #f2eee7;
+      border: 1px solid #e3dbcf;
+    }
+
+    .option.recommended .sample {
+      color: var(--accent);
+      background: var(--accent-weak);
+      border-color: rgba(47, 111, 99, 0.24);
+    }
+
+    .icon {
+      display: block;
+      width: 22px;
+      height: 22px;
+      background-image: var(--svg);
+      background-position: center;
+      background-repeat: no-repeat;
+      background-size: contain;
+    }
+
+    .bar.dark .icon {
+      filter: invert(1);
+    }
+
+    .name {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+      margin-bottom: 4px;
+      font-size: 14px;
+      font-weight: 720;
+    }
+
+    code {
+      color: #5f5142;
+      font-family: "Cascadia Mono", Consolas, monospace;
+      font-size: 12px;
+      overflow-wrap: anywhere;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      height: 19px;
+      padding: 0 7px;
+      border-radius: 999px;
+      background: var(--accent);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .desc {
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    footer {
+      margin-top: 18px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.7;
+    }
+
+    a {
+      color: var(--accent);
+    }
+
+    @media (max-width: 820px) {
+      header,
+      .toolbar-preview,
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      .note {
+        justify-self: stretch;
+      }
+    }
+
+    @media (max-width: 540px) {
+      main {
+        width: min(100% - 22px, 1180px);
+        padding-top: 22px;
+      }
+
+      .options {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <div>
+        <h1>KOReader Windows 图标候选</h1>
+        <p class="lead">这里先只展示可替换方向，不改程序。当前建议优先选 Lucide 线性 SVG：风格干净，24px 下清晰，后续可转成 PNG 给 Tkinter 使用。</p>
+      </div>
+      <div class="note">
+        推荐组合已用绿色标出。你确认后，我再把选中的 SVG 转为运行时资源，并替换按钮文字/emoji。
+      </div>
+    </header>
+
+    <div class="toolbar-preview" aria-label="推荐组合工具栏预览">
+      <div class="bar">
+        <span class="tool" title="旋转"><span class="icon" style="--svg: url('lucide/rotate-cw.svg')"></span></span>
+        <span class="tool" title="全刷"><span class="icon" style="--svg: url('lucide/refresh-cw.svg')"></span></span>
+        <span class="tool" title="截图"><span class="icon" style="--svg: url('lucide/camera.svg')"></span></span>
+        <span class="bar-title">浅色标题栏推荐效果</span>
+        <span class="tool accent" title="置顶"><span class="icon" style="--svg: url('lucide/pin.svg')"></span></span>
+        <span class="tool" title="昼夜"><span class="icon" style="--svg: url('lucide/moon.svg')"></span></span>
+      </div>
+      <div class="bar dark">
+        <span class="tool" title="旋转"><span class="icon" style="--svg: url('lucide/rotate-cw.svg')"></span></span>
+        <span class="tool" title="全刷"><span class="icon" style="--svg: url('lucide/refresh-cw.svg')"></span></span>
+        <span class="tool" title="截图"><span class="icon" style="--svg: url('lucide/camera.svg')"></span></span>
+        <span class="bar-title">深色标题栏推荐效果</span>
+        <span class="tool accent" title="置顶"><span class="icon" style="--svg: url('lucide/pin.svg')"></span></span>
+        <span class="tool" title="昼夜"><span class="icon" style="--svg: url('lucide/sun.svg')"></span></span>
+      </div>
+    </div>
+
+    <div class="grid">
+      <section>
+        <div class="section-head">
+          <h2>昼夜切换</h2>
+          <span class="shortcut">标题栏右侧</span>
+        </div>
+        <div class="options">
+          <article class="option recommended">
+            <span class="sample"><span class="icon" style="--svg: url('lucide/moon.svg')"></span></span>
+            <div><div class="name">Moon <span class="tag">推荐夜间入口</span></div><p class="desc"><code>moon.svg</code>，语义最直接，小尺寸识别稳定。</p></div>
+          </article>
+          <article class="option recommended">
+            <span class="sample"><span class="icon" style="--svg: url('lucide/sun.svg')"></span></span>
+            <div><div class="name">Sun <span class="tag">推荐日间入口</span></div><p class="desc"><code>sun.svg</code>，和 Moon 成对使用最清楚。</p></div>
+          </article>
+          <article class="option">
+            <span class="sample"><span class="icon" style="--svg: url('lucide/moon-star.svg')"></span></span>
+            <div><div class="name">Moon Star</div><p class="desc"><code>moon-star.svg</code>，更有装饰感，但 20px 时细节略多。</p></div>
+          </article>
+          <article class="option">
+            <span class="sample"><span class="icon" style="--svg: url('lucide/sun-moon.svg')"></span></span>
+            <div><div class="name">Sun Moon</div><p class="desc"><code>sun-moon.svg</code>，适合“自动/切换”语义，单按钮也可以。</p></div>
+          </article>
+        </div>
+      </section>
+
+      <section>
+        <div class="section-head">
+          <h2>置顶窗口</h2>
+          <span class="shortcut">标题栏右侧</span>
+        </div>
+        <div class="options">
+          <article class="option recommended">
+            <span class="sample"><span class="icon" style="--svg: url('lucide/pin.svg')"></span></span>
+            <div><div class="name">Pin <span class="tag">推荐</span></div><p class="desc"><code>pin.svg</code>，和当前图钉语义一致，替换成本最低。</p></div>
+          </article>
+          <article class="option">
+            <span class="sample"><span class="icon" style="--svg: url('lucide/pin-off.svg')"></span></span>
+            <div><div class="name">Pin Off</div><p class="desc"><code>pin-off.svg</code>，可用于“已取消置顶”状态。</p></div>
+          </article>
+          <article class="option">
+            <span class="sample"><span class="icon" style="--svg: url('lucide/bookmark.svg')"></span></span>
+            <div><div class="name">Bookmark</div><p class="desc"><code>bookmark.svg</code>，更像收藏，不如 Pin 准确。</p></div>
+          </article>
+          <article class="option">
+            <span class="sample"><span class="icon" style="--svg: url('lucide/bookmark-check.svg')"></span></span>
+            <div><div class="name">Bookmark Check</div><p class="desc"><code>bookmark-check.svg</code>，状态感强，但窗口置顶语义偏弱。</p></div>
+          </article>
+        </div>
+      </section>
+
+      <section>
+        <div class="section-head">
+          <h2>旋转屏幕</h2>
+          <span class="shortcut">默认 F6</span>
+        </div>
+        <div class="options">
+          <article class="option recommended">
+            <span class="sample"><span class="icon" style="--svg: url('lucide/rotate-cw.svg')"></span></span>
+            <div><div class="name">Rotate CW <span class="tag">推荐</span></div><p class="desc"><code>rotate-cw.svg</code>，旋转动作明确，和当前“顺时针切换”最接近。</p></div>
+          </article>
+          <article class="option">
+            <span class="sample"><span class="icon" style="--svg: url('lucide/rotate-ccw.svg')"></span></span>
+            <div><div class="name">Rotate CCW</div><p class="desc"><code>rotate-ccw.svg</code>，如果设备实际逆时针旋转可选。</p></div>
+          </article>
+          <article class="option">
+            <span class="sample"><span class="icon" style="--svg: url('lucide/rotate-cw-square.svg')"></span></span>
+            <div><div class="name">Rotate Square</div><p class="desc"><code>rotate-cw-square.svg</code>，更像“屏幕/窗口旋转”，但图形更密。</p></div>
+          </article>
+        </div>
+      </section>
+
+      <section>
+        <div class="section-head">
+          <h2>全刷</h2>
+          <span class="shortcut">默认 F5</span>
+        </div>
+        <div class="options">
+          <article class="option recommended">
+            <span class="sample"><span class="icon" style="--svg: url('lucide/refresh-cw.svg')"></span></span>
+            <div><div class="name">Refresh CW <span class="tag">推荐</span></div><p class="desc"><code>refresh-cw.svg</code>，刷新语义最通用，替代当前闪电更准确。</p></div>
+          </article>
+          <article class="option">
+            <span class="sample"><span class="icon" style="--svg: url('lucide/refresh-ccw.svg')"></span></span>
+            <div><div class="name">Refresh CCW</div><p class="desc"><code>refresh-ccw.svg</code>，和推荐款同义，只是方向不同。</p></div>
+          </article>
+          <article class="option">
+            <span class="sample"><span class="icon" style="--svg: url('lucide/repeat.svg')"></span></span>
+            <div><div class="name">Repeat</div><p class="desc"><code>repeat.svg</code>，更像循环/重做，不够像屏幕全刷。</p></div>
+          </article>
+          <article class="option">
+            <span class="sample"><span class="icon" style="--svg: url('lucide/repeat-2.svg')"></span></span>
+            <div><div class="name">Repeat 2</div><p class="desc"><code>repeat-2.svg</code>，视觉更紧凑，但语义也偏循环。</p></div>
+          </article>
+        </div>
+      </section>
+
+      <section>
+        <div class="section-head">
+          <h2>截图</h2>
+          <span class="shortcut">默认 F7</span>
+        </div>
+        <div class="options">
+          <article class="option recommended">
+            <span class="sample"><span class="icon" style="--svg: url('lucide/camera.svg')"></span></span>
+            <div><div class="name">Camera <span class="tag">推荐</span></div><p class="desc"><code>camera.svg</code>，用户认知最强，和当前相机 emoji 一致。</p></div>
+          </article>
+          <article class="option">
+            <span class="sample"><span class="icon" style="--svg: url('lucide/image.svg')"></span></span>
+            <div><div class="name">Image</div><p class="desc"><code>image.svg</code>，更像打开图片/图库，不是直接截图。</p></div>
+          </article>
+          <article class="option">
+            <span class="sample"><span class="icon" style="--svg: url('lucide/scan-line.svg')"></span></span>
+            <div><div class="name">Scan Line</div><p class="desc"><code>scan-line.svg</code>，有“捕获屏幕”的感觉，但语义稍抽象。</p></div>
+          </article>
+          <article class="option">
+            <span class="sample"><span class="icon" style="--svg: url('lucide/scan.svg')"></span></span>
+            <div><div class="name">Scan</div><p class="desc"><code>scan.svg</code>，适合截图区域/扫描类功能。</p></div>
+          </article>
+        </div>
+      </section>
+
+      <section>
+        <div class="section-head">
+          <h2>设备休眠</h2>
+          <span class="shortcut">默认 Esc</span>
+        </div>
+        <div class="options">
+          <article class="option recommended">
+            <span class="sample"><span class="icon" style="--svg: url('lucide/power.svg')"></span></span>
+            <div><div class="name">Power <span class="tag">推荐</span></div><p class="desc"><code>power.svg</code>，设备控制语义强，适合替代睡觉 emoji。</p></div>
+          </article>
+          <article class="option">
+            <span class="sample"><span class="icon" style="--svg: url('lucide/circle-power.svg')"></span></span>
+            <div><div class="name">Circle Power</div><p class="desc"><code>circle-power.svg</code>，按钮感更强，但图形较满。</p></div>
+          </article>
+          <article class="option">
+            <span class="sample"><span class="icon" style="--svg: url('lucide/power-off.svg')"></span></span>
+            <div><div class="name">Power Off</div><p class="desc"><code>power-off.svg</code>，容易理解成关机，风险略高。</p></div>
+          </article>
+          <article class="option">
+            <span class="sample"><span class="icon" style="--svg: url('lucide/moon.svg')"></span></span>
+            <div><div class="name">Moon</div><p class="desc"><code>moon.svg</code>，像休眠，但会和昼夜按钮撞语义。</p></div>
+          </article>
+        </div>
+      </section>
+
+      <section>
+        <div class="section-head">
+          <h2>断开连接</h2>
+          <span class="shortcut">连接页</span>
+        </div>
+        <div class="options">
+          <article class="option recommended">
+            <span class="sample"><span class="icon" style="--svg: url('lucide/unplug.svg')"></span></span>
+            <div><div class="name">Unplug <span class="tag">推荐</span></div><p class="desc"><code>unplug.svg</code>，最像断开设备连接。</p></div>
+          </article>
+          <article class="option">
+            <span class="sample"><span class="icon" style="--svg: url('lucide/log-out.svg')"></span></span>
+            <div><div class="name">Log Out</div><p class="desc"><code>log-out.svg</code>，更像退出账号，不如 Unplug 精准。</p></div>
+          </article>
+          <article class="option">
+            <span class="sample"><span class="icon" style="--svg: url('lucide/x.svg')"></span></span>
+            <div><div class="name">X</div><p class="desc"><code>x.svg</code>，适合关闭按钮，但断开语义较弱。</p></div>
+          </article>
+          <article class="option">
+            <span class="sample"><span class="icon" style="--svg: url('lucide/circle-x.svg')"></span></span>
+            <div><div class="name">Circle X</div><p class="desc"><code>circle-x.svg</code>，删除/错误感偏强。</p></div>
+          </article>
+        </div>
+      </section>
+
+      <section>
+        <div class="section-head">
+          <h2>上一页 / 下一页</h2>
+          <span class="shortcut">方向键</span>
+        </div>
+        <div class="options">
+          <article class="option recommended">
+            <span class="sample"><span class="icon" style="--svg: url('lucide/chevron-left.svg')"></span></span>
+            <div><div class="name">Chevron Left <span class="tag">推荐</span></div><p class="desc"><code>chevron-left.svg</code>，适合翻页按钮，视觉轻。</p></div>
+          </article>
+          <article class="option recommended">
+            <span class="sample"><span class="icon" style="--svg: url('lucide/chevron-right.svg')"></span></span>
+            <div><div class="name">Chevron Right <span class="tag">推荐</span></div><p class="desc"><code>chevron-right.svg</code>，和左箭头成对。</p></div>
+          </article>
+          <article class="option">
+            <span class="sample"><span class="icon" style="--svg: url('lucide/arrow-left.svg')"></span></span>
+            <div><div class="name">Arrow Left</div><p class="desc"><code>arrow-left.svg</code>，更像返回/移动，重量略大。</p></div>
+          </article>
+          <article class="option">
+            <span class="sample"><span class="icon" style="--svg: url('lucide/arrow-right.svg')"></span></span>
+            <div><div class="name">Arrow Right</div><p class="desc"><code>arrow-right.svg</code>，适合强调方向，但不如 Chevron 轻。</p></div>
+          </article>
+        </div>
+      </section>
+    </div>
+
+    <footer>
+      图标候选来自 <a href="https://lucide.dev/" target="_blank" rel="noreferrer">Lucide</a>，许可证为 ISC。当前页面只是本地预览，确认前不会替换程序资源。
+    </footer>
+  </main>
+</body>
+</html>

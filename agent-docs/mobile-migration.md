@@ -1,5 +1,7 @@
 # KOReader Remote Android 重构设计
 
+> 状态说明：这是 2026-04 阶段的历史设计文档。2026-05-09 起当前仓库已改为 `windows-version/` 与 `android-version/` 两个版本目录；本文中的 `android-app/`、根目录 `koreader_page_turner.py` 等路径只代表当时方案，不再作为当前实施路径。当前入口以 [../README.MD](D:/github/koreader_remote_turnpages/README.MD) 和 [index.md](D:/github/koreader_remote_turnpages/agent-docs/index.md) 为准。
+
 ## 1. 背景与现状
 
 当前仓库只有一个桌面入口文件 [koreader_page_turner.py](D:/github/koreader_remote_turnpages/koreader_page_turner.py)。它同时承担了以下职责：
