@@ -856,14 +856,28 @@ class KOReaderRemoteApp:
         self.btn_connect.config(state=tk.NORMAL, text="立即连接")
         messagebox.showerror("连接失败", "无法连接。请检查IP或确认HTTP Server已开启。")
 
+    def focus_control_page(self):
+        try:
+            self.btn_next.focus_set()
+        except Exception:
+            try:
+                self.root.focus_set()
+            except Exception:
+                pass
+
     def show_login(self):
+        self.entry_ip.configure(state=tk.NORMAL)
         self.page_control.pack_forget()
         self.page_login.pack(fill=tk.BOTH, expand=True)
+        self.root.after_idle(self.entry_ip.focus_set)
 
     def show_control(self):
+        self.entry_ip.configure(state=tk.DISABLED)
         self.page_login.pack_forget()
         self.page_control.pack(fill=tk.BOTH, expand=True)
         self.lbl_device_info.config(text=f"已连接: {self.ip_var.get()}")
+        self.focus_control_page()
+        self.root.after_idle(self.focus_control_page)
 
     def disconnect(self):
         self.connected = False
@@ -903,7 +917,21 @@ class KOReaderRemoteApp:
         elif action == "disconnect":
             self.disconnect()
 
+    def is_editing_text_input(self):
+        focus_widget = self.root.focus_get()
+        if focus_widget is None:
+            return False
+        try:
+            widget_class = focus_widget.winfo_class()
+            widget_state = str(focus_widget.cget("state"))
+        except Exception:
+            return False
+        return widget_class in {"Entry", "TEntry", "Text"} and widget_state != tk.DISABLED
+
     def on_key_press(self, event):
+        if self.is_editing_text_input():
+            return None
+
         action = get_mapped_action(
             self.keyboard_mapping,
             event.keysym,

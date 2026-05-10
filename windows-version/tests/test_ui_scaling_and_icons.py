@@ -1,5 +1,6 @@
 import importlib.util
 import pathlib
+import tkinter as tk
 import unittest
 
 
@@ -52,6 +53,78 @@ class UiScalingAndIconsTest(unittest.TestCase):
         path = self.app.get_icon_asset_relative_path("camera", "black", 20, 1.5)
 
         self.assertEqual(path, "assets/icons/30/camera-black.png")
+
+
+class ControlPageFocusTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.app = load_app_module()
+        cls.app.pygame = None
+        cls.app.PYGAME_IMPORT_ERROR = RuntimeError("disabled in GUI focus tests")
+
+    def test_show_control_disables_hidden_ip_entry_and_moves_focus(self):
+        root = tk.Tk()
+        try:
+            app = self.app.KOReaderRemoteApp(root)
+            app.ip_var.set("192.168.1.8")
+            root.update()
+            app.entry_ip.focus_force()
+            root.update()
+
+            self.assertIs(root.focus_get(), app.entry_ip)
+
+            app.connected = True
+            app.show_control()
+            root.update()
+
+            self.assertEqual(str(app.entry_ip.cget("state")), tk.DISABLED)
+            self.assertIsNot(root.focus_get(), app.entry_ip)
+        finally:
+            try:
+                app.gamepad_running = False
+            except UnboundLocalError:
+                pass
+            root.destroy()
+
+    def test_show_login_reenables_ip_entry_for_editing(self):
+        root = tk.Tk()
+        try:
+            app = self.app.KOReaderRemoteApp(root)
+            app.entry_ip.configure(state=tk.DISABLED)
+
+            app.show_login()
+            root.update()
+
+            self.assertEqual(str(app.entry_ip.cget("state")), tk.NORMAL)
+        finally:
+            try:
+                app.gamepad_running = False
+            except UnboundLocalError:
+                pass
+            root.destroy()
+
+    def test_key_press_does_not_trigger_shortcuts_while_editing_ip_entry(self):
+        root = tk.Tk()
+        try:
+            app = self.app.KOReaderRemoteApp(root)
+            app.entry_ip.focus_force()
+            root.update()
+            calls = []
+            app.trigger_action = calls.append
+
+            class Event:
+                keysym = "F5"
+
+            result = app.on_key_press(Event())
+
+            self.assertIsNone(result)
+            self.assertEqual(calls, [])
+        finally:
+            try:
+                app.gamepad_running = False
+            except UnboundLocalError:
+                pass
+            root.destroy()
 
 
 if __name__ == "__main__":
