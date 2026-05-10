@@ -119,6 +119,16 @@ SCREENSHOTS_DIR = os.path.join(APP_DIR, "screenshots")
 ICON_PATH = resource_path("logo.ico")
 ICON_PNG_PATH = resource_path("logo.png")
 
+UI_BASE_DPI = 96
+TK_BASE_SCALING = UI_BASE_DPI / 72
+DEFAULT_WINDOW_SIZE_DP = (300, 280)
+MIN_WINDOW_SIZE_DP = (280, 240)
+ICON_SIZE_BUCKETS = (20, 24, 25, 30, 36, 40, 48)
+THEME_ICON_NAMES = {
+    "light": "moon",
+    "dark": "sun",
+}
+
 WM_SETICON = 0x0080
 ICON_SMALL = 0
 ICON_BIG = 1
@@ -141,6 +151,99 @@ def set_windows_app_id():
         windll.shell32.SetCurrentProcessExplicitAppUserModelID(APP_ID)
     except Exception:
         pass
+
+
+def set_process_dpi_awareness():
+    if sys.platform != "win32":
+        return
+
+    try:
+        windll.shcore.SetProcessDpiAwareness(1)
+    except Exception:
+        try:
+            windll.user32.SetProcessDPIAware()
+        except Exception:
+            pass
+
+
+def scale_ui_value(value, scale):
+    return max(1, int(round(float(value) * float(scale))))
+
+
+def _coerce_positive_int(value):
+    try:
+        number = int(value)
+    except (TypeError, ValueError):
+        return None
+    return number if number > 0 else None
+
+
+def get_configured_window_size(config, scale):
+    width_dp = _coerce_positive_int(config.get("window_width_dp"))
+    height_dp = _coerce_positive_int(config.get("window_height_dp"))
+    legacy_width = _coerce_positive_int(config.get("window_width"))
+    legacy_height = _coerce_positive_int(config.get("window_height"))
+
+    if width_dp and height_dp:
+        width = scale_ui_value(width_dp, scale)
+        height = scale_ui_value(height_dp, scale)
+    elif legacy_width and legacy_height:
+        width = legacy_width
+        height = legacy_height
+    else:
+        width = scale_ui_value(DEFAULT_WINDOW_SIZE_DP[0], scale)
+        height = scale_ui_value(DEFAULT_WINDOW_SIZE_DP[1], scale)
+
+    min_width = scale_ui_value(MIN_WINDOW_SIZE_DP[0], scale)
+    min_height = scale_ui_value(MIN_WINDOW_SIZE_DP[1], scale)
+    return max(width, min_width), max(height, min_height)
+
+
+def get_window_dpi_scale(window):
+    try:
+        dpi = float(window.winfo_fpixels("1i"))
+    except Exception:
+        return 1.0
+    if dpi <= 0:
+        return 1.0
+    return max(1.0, dpi / UI_BASE_DPI)
+
+
+def configure_tk_scaling(window):
+    scale = get_window_dpi_scale(window)
+    try:
+        window.tk.call("tk", "scaling", TK_BASE_SCALING * scale)
+    except Exception:
+        pass
+    return scale
+
+
+def pick_icon_size(logical_size, scale, buckets=ICON_SIZE_BUCKETS):
+    target = scale_ui_value(logical_size, scale)
+    return min(buckets, key=lambda size: (abs(size - target), -size))
+
+
+def get_icon_asset_relative_path(icon_name, variant, logical_size, scale):
+    pixel_size = pick_icon_size(logical_size, scale)
+    return os.path.join("assets", "icons", str(pixel_size), f"{icon_name}-{variant}.png").replace("\\", "/")
+
+
+def get_theme_toggle_icon_name(theme):
+    return THEME_ICON_NAMES.get(theme, THEME_ICON_NAMES["light"])
+
+
+def get_monochrome_icon_variant(theme):
+    return "white" if theme == "dark" else "black"
+
+
+def get_pin_icon_variant(theme, always_on_top):
+    if always_on_top:
+        return "primary_dark" if theme == "dark" else "primary_light"
+    return get_monochrome_icon_variant(theme)
+
+
+def get_danger_icon_variant(theme):
+    return "danger_dark" if theme == "dark" else "danger_light"
 
 
 def get_native_window_handle(window):
@@ -290,6 +393,8 @@ class KOReaderRemoteApp:
     def __init__(self, root):
         self.root = root
         self.root.title(APP_NAME)
+        self.ui_scale = configure_tk_scaling(self.root)
+        self.icon_images = {}
         
         # === 加载自定义图标 ===
         apply_native_window_icon(self.root)
@@ -305,15 +410,12 @@ class KOReaderRemoteApp:
         # 加载配置（在设置窗口大小之前）
         self.load_config()
         
-        # 设置窗口大小（从配置读取或使用默认值）
-        default_width = 300
-        default_height = 280
-        width = self.config.get('window_width', default_width)
-        height = self.config.get('window_height', default_height)
+        # 设置窗口大小（优先使用不随 DPI 漂移的逻辑尺寸）
+        width, height = get_configured_window_size(self.config, self.ui_scale)
         self.root.geometry(f"{width}x{height}")
         self.center_window(width, height)
         self.root.resizable(True, True)  # 允许调整大小
-        self.root.minsize(250, 220)  # 设置最小尺寸
+        self.root.minsize(self.px(MIN_WINDOW_SIZE_DP[0]), self.px(MIN_WINDOW_SIZE_DP[1]))
         
         # 应用置顶状态
         # 应用置顶状态
@@ -343,6 +445,30 @@ class KOReaderRemoteApp:
         self.root.bind('<KeyPress>', self.on_key_press)
         self.root.bind('<MouseWheel>', self.on_mouse_wheel)
 
+    def px(self, value):
+        return scale_ui_value(value, self.ui_scale)
+
+    def get_icon_image(self, icon_name, variant, logical_size=20):
+        key = (icon_name, variant, logical_size)
+        if key in self.icon_images:
+            return self.icon_images[key]
+
+        relative_path = get_icon_asset_relative_path(icon_name, variant, logical_size, self.ui_scale)
+        path = resource_path(relative_path)
+        try:
+            image = tk.PhotoImage(file=path)
+        except Exception:
+            image = None
+        self.icon_images[key] = image
+        return image
+
+    def set_button_icon(self, button, icon_name, variant, text="", fallback_text="", logical_size=20, compound=tk.LEFT):
+        image = self.get_icon_image(icon_name, variant, logical_size)
+        if image:
+            button.configure(image=image, text=text, compound=compound)
+        else:
+            button.configure(image="", text=fallback_text or text)
+
     def center_window(self, width, height):
         screen_width = self.root.winfo_screenwidth()
         screen_height = self.root.winfo_screenheight()
@@ -356,8 +482,11 @@ class KOReaderRemoteApp:
 
     def create_widgets(self):
         # === 1. 顶部标题栏 (极简版) ===
-        # 高度减小到 32px，仅容纳按钮
-        self.title_bar = tk.Frame(self.root, height=32)
+        title_bar_height = self.px(32)
+        title_button_width = self.px(34)
+        title_button_height = max(1, title_bar_height - self.px(2))
+
+        self.title_bar = tk.Frame(self.root, height=title_bar_height)
         self.title_bar.pack(fill=tk.X, side=tk.TOP)
         self.title_bar.pack_propagate(False)
         
@@ -365,96 +494,110 @@ class KOReaderRemoteApp:
         
         # === 手柄状态指示灯 ===
         # 在最左侧添加一个指示灯
-        self.canvas_gamepad_status = tk.Canvas(self.title_bar, width=14, height=14, 
+        status_light_size = self.px(14)
+        status_light_inset = self.px(3)
+        self.canvas_gamepad_status = tk.Canvas(self.title_bar, width=status_light_size, height=status_light_size,
                                                bg=THEMES[self.current_theme]['panel_bg'], 
                                                highlightthickness=0)
-        self.canvas_gamepad_status.pack(side=tk.LEFT, padx=(5, 1))
+        self.canvas_gamepad_status.pack(side=tk.LEFT, padx=(self.px(5), self.px(1)))
         # 初始绘制红色圆点
-        self.status_light = self.canvas_gamepad_status.create_oval(3, 3, 11, 11, fill="#FF5252", outline="")
+        self.status_light = self.canvas_gamepad_status.create_oval(
+            status_light_inset,
+            status_light_inset,
+            status_light_size - status_light_inset,
+            status_light_size - status_light_inset,
+            fill="#FF5252",
+            outline=""
+        )
         self.update_gamepad_status(False) # 初始状态: 未连接
+
+        title_button_options = {
+            "relief": tk.FLAT,
+            "bd": 0,
+            "cursor": "hand2",
+            "width": title_button_width,
+            "height": title_button_height,
+            "padx": 0,
+            "pady": 0,
+            "highlightthickness": 0,
+            "activebackground": None,
+        }
         
         # 主题切换按钮
-        self.btn_theme = tk.Button(self.title_bar, text="☾", font=("Arial", 14),
-                                   relief=tk.FLAT, bd=0, cursor="hand2", width=4,
-                                   activebackground=None,
-                                   command=self.toggle_theme)
+        self.btn_theme = tk.Button(self.title_bar, text="", font=("Segoe UI Symbol", 12),
+                                   command=self.toggle_theme, **title_button_options)
         self.btn_theme.pack(side=tk.RIGHT, fill=tk.Y)
         
         # 图钉按钮 (置顶功能，在主题按钮左侧)
-        self.btn_pin = tk.Button(self.title_bar, text="📌", font=("Segoe UI Symbol", 10),
-                                 relief=tk.FLAT, bd=0, cursor="hand2", width=4,
-                                 activebackground=None,
-                                 command=self.toggle_always_on_top)
-        self.btn_pin.pack(side=tk.RIGHT, fill=tk.Y, padx=1)
+        self.btn_pin = tk.Button(self.title_bar, text="", font=("Segoe UI Symbol", 10),
+                                 command=self.toggle_always_on_top, **title_button_options)
+        self.btn_pin.pack(side=tk.RIGHT, fill=tk.Y, padx=self.px(1))
 
         # === 新增功能按钮 (最左侧) ===
         # 字体选用 Segoe UI Symbol 或其他通用字体以更好显示特殊符号
         btn_font = ("Segoe UI Symbol", 11)
         
         # 旋转屏幕 (Rotate) - 状态切换
-        self.btn_rotate = tk.Button(self.title_bar, text="⟳", font=btn_font,
-                                    relief=tk.FLAT, bd=0, cursor="hand2", width=4,
-                                    activebackground=None,
-                                    command=self.rotate_device)
-        self.btn_rotate.pack(side=tk.LEFT, fill=tk.Y, padx=1)
+        self.btn_rotate = tk.Button(self.title_bar, text="", font=btn_font,
+                                    command=self.rotate_device, **title_button_options)
+        self.btn_rotate.pack(side=tk.LEFT, fill=tk.Y, padx=self.px(1))
         ToolTip(self.btn_rotate, "旋转 (F6)")
 
         # 刷新屏幕 (Full Refresh)
-        self.btn_refresh = tk.Button(self.title_bar, text="⚡", font=btn_font,
-                                     relief=tk.FLAT, bd=0, cursor="hand2", width=4,
-                                     activebackground=None,
-                                     command=self.full_refresh)
-        self.btn_refresh.pack(side=tk.LEFT, fill=tk.Y, padx=1)
+        self.btn_refresh = tk.Button(self.title_bar, text="", font=btn_font,
+                                     command=self.full_refresh, **title_button_options)
+        self.btn_refresh.pack(side=tk.LEFT, fill=tk.Y, padx=self.px(1))
         ToolTip(self.btn_refresh, "全刷 (F5)")
 
         # 截图 (Screenshot)
-        self.btn_screenshot = tk.Button(self.title_bar, text="📷", font=btn_font,
-                                        relief=tk.FLAT, bd=0, cursor="hand2", width=4,
-                                        activebackground=None,
-                                        command=self.take_screenshot)
-        self.btn_screenshot.pack(side=tk.LEFT, fill=tk.Y, padx=1)
+        self.btn_screenshot = tk.Button(self.title_bar, text="", font=btn_font,
+                                        command=self.take_screenshot, **title_button_options)
+        self.btn_screenshot.pack(side=tk.LEFT, fill=tk.Y, padx=self.px(1))
         ToolTip(self.btn_screenshot, "截图 (F7)")
 
         # === 2. 底部状态栏 ===
-        self.status_bar = tk.Frame(self.root, height=25)
+        self.status_bar = tk.Frame(self.root, height=self.px(25))
         self.status_bar.pack(fill=tk.X, side=tk.BOTTOM)
+        self.status_bar.pack_propagate(False)
         
         self.lbl_status = tk.Label(self.status_bar, text="准备就绪", font=("Segoe UI", 8))
-        self.lbl_status.pack(side=tk.LEFT, padx=10)
+        self.lbl_status.pack(side=tk.LEFT, padx=self.px(10))
 
         # === 3. 主内容区域 ===
         self.main_container = tk.Frame(self.root)
-        self.main_container.pack(fill=tk.BOTH, expand=True, padx=15, pady=10)
+        self.main_container.pack(fill=tk.BOTH, expand=True, padx=self.px(15), pady=self.px(10))
         
         # --- 页面A: 登录页 ---
         self.page_login = tk.Frame(self.main_container)
         
-        tk.Label(self.page_login, text="连接设备", font=("Microsoft YaHei UI", 16, "bold")).pack(pady=(15, 15))
+        tk.Label(self.page_login, text="连接设备", font=("Microsoft YaHei UI", 16, "bold")).pack(
+            pady=(self.px(15), self.px(15))
+        )
         
         # IP 输入框容器
-        self.frame_ip = tk.Frame(self.page_login, padx=1, pady=1)
-        self.frame_ip_inner = tk.Frame(self.frame_ip, padx=10, pady=8)
+        self.frame_ip = tk.Frame(self.page_login, padx=self.px(1), pady=self.px(1))
+        self.frame_ip_inner = tk.Frame(self.frame_ip, padx=self.px(10), pady=self.px(8))
         
-        self.frame_ip.pack(fill=tk.X, pady=(0, 15))
+        self.frame_ip.pack(fill=tk.X, pady=(0, self.px(15)))
         self.frame_ip_inner.pack(fill=tk.BOTH)
         
         tk.Label(self.frame_ip_inner, text="IP 地址:", font=("Segoe UI", 9)).pack(anchor="w")
         self.entry_ip = tk.Entry(self.frame_ip_inner, textvariable=self.ip_var, font=("Segoe UI", 11), relief=tk.FLAT)
-        self.entry_ip.pack(fill=tk.X, pady=(2, 0))
+        self.entry_ip.pack(fill=tk.X, pady=(self.px(2), 0))
         self.entry_ip.bind('<Return>', lambda e: self.on_connect_click())
         
         # 连接按钮
         self.btn_connect = tk.Button(self.page_login, text="立即连接", font=("Microsoft YaHei UI", 11),
                                      relief=tk.FLAT, cursor="hand2",
                                      command=self.on_connect_click)
-        self.btn_connect.pack(fill=tk.X, ipady=6)
+        self.btn_connect.pack(fill=tk.X, ipady=self.px(6))
 
         # --- 页面B: 控制页 ---
         self.page_control = tk.Frame(self.main_container)
         
         # 设备信息行
         self.frame_info = tk.Frame(self.page_control)
-        self.frame_info.pack(fill=tk.X, pady=(0, 5))
+        self.frame_info.pack(fill=tk.X, pady=(0, self.px(5)))
         
         self.lbl_device_info = tk.Label(self.frame_info, text="已连接", font=("Microsoft YaHei UI", 9, "bold"))
         self.lbl_device_info.pack(side=tk.LEFT)
@@ -475,19 +618,19 @@ class KOReaderRemoteApp:
         self.btn_prev = tk.Button(self.frame_actions, text="< 上一页\n(↑)", font=("Microsoft YaHei UI", 12),
                                   relief=tk.FLAT, cursor="hand2",
                                   command=self.previous_page)
-        self.btn_prev.grid(row=0, column=0, sticky="nsew", padx=(0, 4), pady=(0, 10))
+        self.btn_prev.grid(row=0, column=0, sticky="nsew", padx=(0, self.px(4)), pady=(0, self.px(10)))
         
         # 下一页
         self.btn_next = tk.Button(self.frame_actions, text="下一页 >\n(↓)", font=("Microsoft YaHei UI", 14, "bold"),
                                   relief=tk.FLAT, cursor="hand2",
                                   command=self.next_page)
-        self.btn_next.grid(row=0, column=1, sticky="nsew", padx=(4, 0), pady=(0, 10))
+        self.btn_next.grid(row=0, column=1, sticky="nsew", padx=(self.px(4), 0), pady=(0, self.px(10)))
         
         # 休眠按钮
         self.btn_suspend = tk.Button(self.page_control, text="😴 设备休眠 (Esc)", font=("Microsoft YaHei UI", 10),
                                      relief=tk.FLAT, cursor="hand2",
                                      command=self.suspend_device)
-        self.btn_suspend.pack(fill=tk.X, ipady=8)
+        self.btn_suspend.pack(fill=tk.X, ipady=self.px(8))
 
         self.show_login()
 
@@ -510,7 +653,14 @@ class KOReaderRemoteApp:
         # 3. 主题按钮
         self.btn_theme.configure(bg=t['panel_bg'], fg=t['theme_icon_color'], 
                                  activebackground=t['panel_bg'], activeforeground=t['theme_icon_color'])
-        self.btn_theme.config(text="☾" if self.current_theme == "light" else "☀")
+        icon_variant = get_monochrome_icon_variant(self.current_theme)
+        self.set_button_icon(
+            self.btn_theme,
+            get_theme_toggle_icon_name(self.current_theme),
+            icon_variant,
+            fallback_text="☾" if self.current_theme == "light" else "☀",
+            compound=tk.CENTER
+        )
 
         # 3.1 状态灯背景
         self.canvas_gamepad_status.configure(bg=t['panel_bg'])
@@ -519,11 +669,21 @@ class KOReaderRemoteApp:
         pin_color = t['btn_primary'] if self.always_on_top else t['theme_icon_color']
         self.btn_pin.configure(bg=t['panel_bg'], fg=pin_color,
                                activebackground=t['panel_bg'], activeforeground=pin_color)
+        self.set_button_icon(
+            self.btn_pin,
+            "pin",
+            get_pin_icon_variant(self.current_theme, self.always_on_top),
+            fallback_text="📌",
+            compound=tk.CENTER
+        )
         
         # 5. 新增功能按钮主题
         for btn in [self.btn_rotate, self.btn_refresh, self.btn_screenshot]:
             btn.configure(bg=t['panel_bg'], fg=t['theme_icon_color'],
                           activebackground=t['panel_bg'], activeforeground=t['theme_icon_color'])
+        self.set_button_icon(self.btn_rotate, "rotate-cw", icon_variant, fallback_text="⟳", compound=tk.CENTER)
+        self.set_button_icon(self.btn_refresh, "refresh-cw", icon_variant, fallback_text="↻", compound=tk.CENTER)
+        self.set_button_icon(self.btn_screenshot, "camera", icon_variant, fallback_text="📷", compound=tk.CENTER)
         
         # 4. 登录页
         self.page_login.winfo_children()[0].configure(bg=t['window_bg'], fg=t['fg_primary'])
@@ -539,6 +699,15 @@ class KOReaderRemoteApp:
         self.lbl_device_info.configure(bg=t['window_bg'], fg=t['fg_primary'])
         self.btn_disconnect.configure(bg=t['window_bg'], fg=t['danger'],
                                       activebackground=t['window_bg'], activeforeground=t['danger'])
+        self.set_button_icon(
+            self.btn_disconnect,
+            "unplug",
+            get_danger_icon_variant(self.current_theme),
+            text="断开",
+            fallback_text="断开",
+            logical_size=20,
+            compound=tk.LEFT
+        )
         
         self.btn_prev.configure(bg=t['btn_secondary'], fg=t['btn_secondary_fg'],
                                 activebackground=t['btn_secondary'], activeforeground=t['btn_secondary_fg'])
@@ -546,6 +715,35 @@ class KOReaderRemoteApp:
                                 activebackground=t['btn_primary'], activeforeground=t['btn_primary_fg'])
         self.btn_suspend.configure(bg=t['btn_suspend'], fg=t['btn_suspend_fg'],
                                    activebackground=t['btn_suspend'], activeforeground=t['btn_suspend_fg'])
+        secondary_icon_variant = "white" if t['btn_secondary_fg'] == "#FFFFFF" else "black"
+        primary_icon_variant = "white" if t['btn_primary_fg'] == "#FFFFFF" else "black"
+        self.set_button_icon(
+            self.btn_prev,
+            "chevron-left",
+            secondary_icon_variant,
+            text="上一页\n(↑)",
+            fallback_text="< 上一页\n(↑)",
+            logical_size=24,
+            compound=tk.LEFT
+        )
+        self.set_button_icon(
+            self.btn_next,
+            "chevron-right",
+            primary_icon_variant,
+            text="下一页\n(↓)",
+            fallback_text="下一页 >\n(↓)",
+            logical_size=24,
+            compound=tk.RIGHT
+        )
+        self.set_button_icon(
+            self.btn_suspend,
+            "power",
+            "white",
+            text="设备休眠 (Esc)",
+            fallback_text="😴 设备休眠 (Esc)",
+            logical_size=20,
+            compound=tk.LEFT
+        )
 
     def toggle_theme(self):
         self.current_theme = "dark" if self.current_theme == "light" else "light"
@@ -604,6 +802,8 @@ class KOReaderRemoteApp:
             self.config['keyboard_mapping'] = getattr(self, 'keyboard_mapping', DEFAULT_KEYBOARD_MAPPING)
             self.config['window_width'] = self.root.winfo_width()
             self.config['window_height'] = self.root.winfo_height()
+            self.config['window_width_dp'] = max(1, int(round(self.root.winfo_width() / self.ui_scale)))
+            self.config['window_height_dp'] = max(1, int(round(self.root.winfo_height() / self.ui_scale)))
             with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
                 json.dump(self.config, f, indent=4, ensure_ascii=False)
         except Exception:
@@ -908,9 +1108,8 @@ class KOReaderRemoteApp:
 
 def main():
     set_windows_app_id()
+    set_process_dpi_awareness()
     root = tk.Tk()
-    try: from ctypes import windll; windll.shcore.SetProcessDpiAwareness(1)
-    except: pass
     app = KOReaderRemoteApp(root)
     root.mainloop()
 

@@ -9,8 +9,10 @@ Windows 桌面版 KOReader 局域网遥控器，基于 Tkinter + requests 开发
 - 鼠标滚轮翻页
 - 旋转、全刷、截图、休眠
 - 顶部设备动作按钮悬停提示
+- Lucide 风格 PNG 按钮图标，支持浅色 / 深色主题切换
 - 浅色 / 深色主题
 - 窗口置顶
+- 按 Windows DPI 缩放逻辑尺寸保存窗口大小，降低不同分辨率 / 缩放倍率下的布局漂移
 - 可选 pygame 手柄支持
 - 本地配置保存到 `koreader_config.json`
 - 支持 PyInstaller 打包单文件 EXE
@@ -56,6 +58,8 @@ Windows 桌面版 KOReader 局域网遥控器，基于 Tkinter + requests 开发
 
 支持常见别名：`PageUp` / `PgUp`、`PageDown` / `PgDn`、`Esc`、`PrintScreen`、`ArrowLeft` / `ArrowRight` / `ArrowUp` / `ArrowDown`。
 
+窗口大小会同时保存旧的像素字段 `window_width` / `window_height` 和新的逻辑尺寸字段 `window_width_dp` / `window_height_dp`。跨不同 Windows 缩放倍率使用时，程序优先读取逻辑尺寸字段。
+
 ## 运行
 
 1. 在 KOReader 中开启 HTTP 服务：`Network -> SSH/HTTP Server`
@@ -91,6 +95,7 @@ dist/KOReader Page Turner.exe
 ```powershell
 python -m unittest "tests/test_http_helpers.py"
 python -m unittest "tests/test_keyboard_mapping.py"
+python -m unittest "tests/test_ui_scaling_and_icons.py"
 python -m py_compile "koreader_page_turner.py"
 ```
 
@@ -101,4 +106,5 @@ python -m py_compile "koreader_page_turner.py"
 - `koreader_page_turner.py`：桌面版应用入口
 - `build_exe.bat`：Windows EXE 打包脚本
 - `logo.ico` / `logo.png`：窗口和打包图标
+- `assets/icons/`：按钮 PNG 图标资源，打包时通过 `--add-data "assets;assets"` 写入 EXE
 - `koreader_config.json`、`screenshots/`、`build/`、`dist/` 为运行或构建生成物，不需要提交

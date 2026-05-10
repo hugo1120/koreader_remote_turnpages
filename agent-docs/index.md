@@ -14,6 +14,8 @@
 - Android GitHub Actions 有两个入口：根目录 [.github/workflows/android-build.yml](D:/github/koreader_remote_turnpages/.github/workflows/android-build.yml) 用于同步整个仓库时构建 APK；[android-version/.github/workflows/android-build.yml](D:/github/koreader_remote_turnpages/android-version/.github/workflows/android-build.yml) 用于只同步 Android 目录成独立仓库时构建 APK。
 - 2026-05-09 删除旧混放结构：根目录旧 Windows 源码、旧 `android-app/`、本地 Gradle 缓存、运行配置、备份和参考图均不再保留。
 - 2026-05-10 Windows 版新增可配置键盘映射：默认 `F5` 全刷、`F6` 旋转、`F7` 截图、`Esc` 休眠；快捷键只在程序窗口获得焦点时生效，配置项为 `koreader_config.json` 的 `keyboard_mapping`。
+- 2026-05-10 Windows 版交互按钮改用 Lucide 风格 PNG 图标资源，资源目录为 `windows-version/assets/icons/`；打包脚本必须保留 `--add-data "assets;assets"`。
+- 2026-05-10 Windows 版窗口尺寸新增 DPI 逻辑尺寸保存字段 `window_width_dp` / `window_height_dp`，用于减少不同分辨率和系统缩放倍率下的布局漂移。
 - Windows 键盘映射测试位于 [windows-version/tests/test_keyboard_mapping.py](D:/github/koreader_remote_turnpages/windows-version/tests/test_keyboard_mapping.py)，最小验证命令为 `python -m unittest "tests/test_keyboard_mapping.py"` 与 `python -m py_compile "koreader_page_turner.py"`。
 - Android 端技术栈确定为 Kotlin + Jetpack Compose。
 - Android 首版目标是在移动端覆盖桌面版核心远程控制能力，并新增音量键翻页与 GitHub Actions 自动产出 APK。
