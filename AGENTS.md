@@ -24,8 +24,9 @@ Windows 版：
 Set-Location "D:/github/koreader_remote_turnpages/windows-version"
 python -m unittest "tests/test_http_helpers.py"
 python -m unittest "tests/test_keyboard_mapping.py"
+python -m unittest "tests/test_ui_scaling_and_icons.py"
 python -m py_compile "koreader_page_turner.py"
-python -m PyInstaller --noconsole --onefile --clean --name "KOReader Page Turner" --icon "logo.ico" --add-data "logo.ico;." --add-data "logo.png;." "koreader_page_turner.py"
+python -m PyInstaller --noconsole --onefile --clean --name "KOReader Page Turner" --icon "logo.ico" --add-data "logo.ico;." --add-data "logo.png;." --add-data "assets;assets" "koreader_page_turner.py"
 ```
 
 Android 版：
@@ -42,3 +43,5 @@ Android APK 通常由 GitHub Actions 生成；根目录 `.github/workflows/andro
 - 快捷键只在 Windows 程序窗口获得焦点时生效，不是全局热键。
 - 默认映射：`F5` 全刷，`F6` 旋转，`F7` 截图，`Esc` 休眠。
 - `koreader_config.json` 的 `keyboard_mapping` 可自定义快捷键；源码运行时配置在 `windows-version/`，EXE 运行时配置在 EXE 同目录。
+- `koreader_config.json` 会保存 `window_width_dp` / `window_height_dp`；布局比例不单独入 JSON，而是根据窗口大小和当前 DPI 动态计算。
+- 交互按钮图标资源在 `windows-version/assets/icons/`，打包必须包含 `--add-data "assets;assets"`；紧凑布局需要 16px 图标资源。

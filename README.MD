@@ -26,7 +26,7 @@ python "koreader_page_turner.py"
 
 快捷键可在 `koreader_config.json` 的 `keyboard_mapping` 中自定义。源码运行时该文件在 `windows-version/`；运行打包 EXE 时该文件在 EXE 同目录。
 
-Windows 版普通控制命令会检查 KOReader HTTP 响应状态；未连接时设备动作会在状态栏提示。顶部旋转、全刷、截图按钮支持悬停提示，交互按钮使用随主题切换的 PNG 图标。窗口大小按 Windows DPI 逻辑尺寸保存，减少不同缩放倍率下的布局漂移。
+Windows 版普通控制命令会检查 KOReader HTTP 响应状态；未连接时设备动作会在状态栏提示。顶部旋转、全刷、截图按钮支持悬停提示，交互按钮使用随主题切换的 PNG 图标。窗口大小按 Windows DPI 逻辑尺寸保存，窗口缩小时标题栏、图标、字体、间距和控制按钮会同步进入紧凑布局。
 
 打包 EXE：
 
