@@ -43,7 +43,25 @@ class UiScalingAndIconsTest(unittest.TestCase):
             1.5,
         )
 
-        self.assertEqual((width, height), (420, 360))
+        self.assertEqual((width, height), (330, 270))
+
+    def test_layout_scale_shrinks_at_compact_window_size(self):
+        scale = self.app.get_layout_scale(
+            window_width=220,
+            window_height=180,
+            dpi_scale=1.0,
+        )
+
+        self.assertEqual(scale, 0.72)
+
+    def test_layout_scale_does_not_grow_above_default_size(self):
+        scale = self.app.get_layout_scale(
+            window_width=480,
+            window_height=420,
+            dpi_scale=1.0,
+        )
+
+        self.assertEqual(scale, 1.0)
 
     def test_theme_toggle_icon_changes_with_day_night_state(self):
         self.assertEqual(self.app.get_theme_toggle_icon_name("light"), "moon")
@@ -53,6 +71,14 @@ class UiScalingAndIconsTest(unittest.TestCase):
         path = self.app.get_icon_asset_relative_path("camera", "black", 20, 1.5)
 
         self.assertEqual(path, "assets/icons/30/camera-black.png")
+
+    def test_icon_size_buckets_have_runtime_assets(self):
+        assets_root = MODULE_PATH.parents[0] / "assets" / "icons"
+
+        for size in self.app.ICON_SIZE_BUCKETS:
+            with self.subTest(size=size):
+                self.assertTrue((assets_root / str(size)).is_dir())
+                self.assertTrue((assets_root / str(size) / "camera-black.png").is_file())
 
 
 class ControlPageFocusTest(unittest.TestCase):

@@ -13,6 +13,7 @@ Windows 桌面版 KOReader 局域网遥控器，基于 Tkinter + requests 开发
 - 浅色 / 深色主题
 - 窗口置顶
 - 按 Windows DPI 缩放逻辑尺寸保存窗口大小，降低不同分辨率 / 缩放倍率下的布局漂移
+- 窗口缩小时标题栏、图标、字体、间距和控制按钮会同步进入紧凑布局
 - 可选 pygame 手柄支持
 - 本地配置保存到 `koreader_config.json`
 - 支持 PyInstaller 打包单文件 EXE
@@ -58,7 +59,7 @@ Windows 桌面版 KOReader 局域网遥控器，基于 Tkinter + requests 开发
 
 支持常见别名：`PageUp` / `PgUp`、`PageDown` / `PgDn`、`Esc`、`PrintScreen`、`ArrowLeft` / `ArrowRight` / `ArrowUp` / `ArrowDown`。
 
-窗口大小会同时保存旧的像素字段 `window_width` / `window_height` 和新的逻辑尺寸字段 `window_width_dp` / `window_height_dp`。跨不同 Windows 缩放倍率使用时，程序优先读取逻辑尺寸字段。
+窗口大小会同时保存旧的像素字段 `window_width` / `window_height` 和新的逻辑尺寸字段 `window_width_dp` / `window_height_dp`。跨不同 Windows 缩放倍率使用时，程序优先读取逻辑尺寸字段。布局比例不会单独写入 JSON；程序会根据已保存的窗口大小和当前 DPI 自动计算紧凑程度。
 
 ## 运行
 

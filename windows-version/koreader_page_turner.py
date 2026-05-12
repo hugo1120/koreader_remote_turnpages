@@ -122,8 +122,9 @@ ICON_PNG_PATH = resource_path("logo.png")
 UI_BASE_DPI = 96
 TK_BASE_SCALING = UI_BASE_DPI / 72
 DEFAULT_WINDOW_SIZE_DP = (300, 280)
-MIN_WINDOW_SIZE_DP = (280, 240)
-ICON_SIZE_BUCKETS = (20, 24, 25, 30, 36, 40, 48)
+MIN_WINDOW_SIZE_DP = (220, 180)
+MIN_LAYOUT_SCALE = 0.72
+ICON_SIZE_BUCKETS = (16, 20, 24, 25, 30, 36, 40, 48)
 THEME_ICON_NAMES = {
     "light": "moon",
     "dark": "sun",
@@ -170,6 +171,10 @@ def scale_ui_value(value, scale):
     return max(1, int(round(float(value) * float(scale))))
 
 
+def clamp(value, minimum, maximum):
+    return max(minimum, min(maximum, value))
+
+
 def _coerce_positive_int(value):
     try:
         number = int(value)
@@ -197,6 +202,14 @@ def get_configured_window_size(config, scale):
     min_width = scale_ui_value(MIN_WINDOW_SIZE_DP[0], scale)
     min_height = scale_ui_value(MIN_WINDOW_SIZE_DP[1], scale)
     return max(width, min_width), max(height, min_height)
+
+
+def get_layout_scale(window_width, window_height, dpi_scale):
+    width_dp = max(1, float(window_width) / float(dpi_scale))
+    height_dp = max(1, float(window_height) / float(dpi_scale))
+    width_scale = width_dp / DEFAULT_WINDOW_SIZE_DP[0]
+    height_scale = height_dp / DEFAULT_WINDOW_SIZE_DP[1]
+    return round(clamp(min(width_scale, height_scale), MIN_LAYOUT_SCALE, 1.0), 2)
 
 
 def get_window_dpi_scale(window):
@@ -412,6 +425,7 @@ class KOReaderRemoteApp:
         
         # 设置窗口大小（优先使用不随 DPI 漂移的逻辑尺寸）
         width, height = get_configured_window_size(self.config, self.ui_scale)
+        self.layout_scale = get_layout_scale(width, height, self.ui_scale)
         self.root.geometry(f"{width}x{height}")
         self.center_window(width, height)
         self.root.resizable(True, True)  # 允许调整大小
@@ -448,6 +462,16 @@ class KOReaderRemoteApp:
     def px(self, value):
         return scale_ui_value(value, self.ui_scale)
 
+    def lpx(self, value):
+        return scale_ui_value(value, self.ui_scale * self.layout_scale)
+
+    def font(self, family, size, *styles):
+        scaled_size = max(7, int(round(size * self.layout_scale)))
+        return (family, scaled_size, *styles)
+
+    def icon_size(self, value):
+        return max(12, int(round(value * self.layout_scale)))
+
     def get_icon_image(self, icon_name, variant, logical_size=20):
         key = (icon_name, variant, logical_size)
         if key in self.icon_images:
@@ -463,6 +487,7 @@ class KOReaderRemoteApp:
         return image
 
     def set_button_icon(self, button, icon_name, variant, text="", fallback_text="", logical_size=20, compound=tk.LEFT):
+        logical_size = self.icon_size(logical_size)
         image = self.get_icon_image(icon_name, variant, logical_size)
         if image:
             button.configure(image=image, text=text, compound=compound)
@@ -480,11 +505,72 @@ class KOReaderRemoteApp:
         apply_native_window_icon(self.root)
         apply_windows_title_bar_theme(self.root, self.current_theme == "dark")
 
+    def apply_responsive_layout(self, window_width=None, window_height=None, force=False):
+        if not hasattr(self, "btn_next"):
+            return
+
+        width = window_width or self.root.winfo_width()
+        height = window_height or self.root.winfo_height()
+        new_layout_scale = get_layout_scale(width, height, self.ui_scale)
+        if not force and new_layout_scale == self.layout_scale:
+            return
+
+        self.layout_scale = new_layout_scale
+        title_bar_height = self.lpx(32)
+        title_button_width = self.lpx(34)
+        title_button_height = max(1, title_bar_height - self.lpx(2))
+        status_light_size = self.lpx(14)
+        status_light_inset = self.lpx(3)
+
+        self.title_bar.configure(height=title_bar_height)
+        self.canvas_gamepad_status.configure(width=status_light_size, height=status_light_size)
+        self.canvas_gamepad_status.coords(
+            self.status_light,
+            status_light_inset,
+            status_light_inset,
+            status_light_size - status_light_inset,
+            status_light_size - status_light_inset
+        )
+        self.canvas_gamepad_status.pack_configure(padx=(self.lpx(5), self.lpx(1)))
+
+        title_button_font = self.font("Segoe UI Symbol", 11)
+        for button in [self.btn_theme, self.btn_pin, self.btn_rotate, self.btn_refresh, self.btn_screenshot]:
+            button.configure(width=title_button_width, height=title_button_height, font=title_button_font)
+            button.pack_configure(padx=self.lpx(1))
+        self.btn_theme.pack_configure(padx=0)
+
+        self.status_bar.configure(height=self.lpx(25))
+        self.lbl_status.configure(font=self.font("Segoe UI", 8))
+        self.lbl_status.pack_configure(padx=self.lpx(10))
+
+        self.main_container.pack_configure(padx=self.lpx(15), pady=self.lpx(10))
+        self.lbl_login_title.configure(font=self.font("Microsoft YaHei UI", 16, "bold"))
+        self.lbl_login_title.pack_configure(pady=(self.lpx(15), self.lpx(15)))
+        self.frame_ip.configure(padx=self.lpx(1), pady=self.lpx(1))
+        self.frame_ip_inner.configure(padx=self.lpx(10), pady=self.lpx(8))
+        self.frame_ip.pack_configure(pady=(0, self.lpx(15)))
+        self.lbl_ip.configure(font=self.font("Segoe UI", 9))
+        self.entry_ip.configure(font=self.font("Segoe UI", 11))
+        self.entry_ip.pack_configure(pady=(self.lpx(2), 0))
+        self.btn_connect.configure(font=self.font("Microsoft YaHei UI", 11))
+        self.btn_connect.pack_configure(ipady=self.lpx(6))
+
+        self.frame_info.pack_configure(pady=(0, self.lpx(5)))
+        self.lbl_device_info.configure(font=self.font("Microsoft YaHei UI", 9, "bold"))
+        self.btn_disconnect.configure(font=self.font("Microsoft YaHei UI", 9))
+        self.btn_prev.configure(font=self.font("Microsoft YaHei UI", 12))
+        self.btn_prev.grid_configure(padx=(0, self.lpx(4)), pady=(0, self.lpx(10)))
+        self.btn_next.configure(font=self.font("Microsoft YaHei UI", 14, "bold"))
+        self.btn_next.grid_configure(padx=(self.lpx(4), 0), pady=(0, self.lpx(10)))
+        self.btn_suspend.configure(font=self.font("Microsoft YaHei UI", 10))
+        self.btn_suspend.pack_configure(ipady=self.lpx(8))
+        self.apply_theme()
+
     def create_widgets(self):
         # === 1. 顶部标题栏 (极简版) ===
-        title_bar_height = self.px(32)
-        title_button_width = self.px(34)
-        title_button_height = max(1, title_bar_height - self.px(2))
+        title_bar_height = self.lpx(32)
+        title_button_width = self.lpx(34)
+        title_button_height = max(1, title_bar_height - self.lpx(2))
 
         self.title_bar = tk.Frame(self.root, height=title_bar_height)
         self.title_bar.pack(fill=tk.X, side=tk.TOP)
@@ -494,12 +580,12 @@ class KOReaderRemoteApp:
         
         # === 手柄状态指示灯 ===
         # 在最左侧添加一个指示灯
-        status_light_size = self.px(14)
-        status_light_inset = self.px(3)
+        status_light_size = self.lpx(14)
+        status_light_inset = self.lpx(3)
         self.canvas_gamepad_status = tk.Canvas(self.title_bar, width=status_light_size, height=status_light_size,
-                                               bg=THEMES[self.current_theme]['panel_bg'], 
+                                               bg=THEMES[self.current_theme]['panel_bg'],
                                                highlightthickness=0)
-        self.canvas_gamepad_status.pack(side=tk.LEFT, padx=(self.px(5), self.px(1)))
+        self.canvas_gamepad_status.pack(side=tk.LEFT, padx=(self.lpx(5), self.lpx(1)))
         # 初始绘制红色圆点
         self.status_light = self.canvas_gamepad_status.create_oval(
             status_light_inset,
@@ -524,85 +610,87 @@ class KOReaderRemoteApp:
         }
         
         # 主题切换按钮
-        self.btn_theme = tk.Button(self.title_bar, text="", font=("Segoe UI Symbol", 12),
+        self.btn_theme = tk.Button(self.title_bar, text="", font=self.font("Segoe UI Symbol", 12),
                                    command=self.toggle_theme, **title_button_options)
         self.btn_theme.pack(side=tk.RIGHT, fill=tk.Y)
         
         # 图钉按钮 (置顶功能，在主题按钮左侧)
-        self.btn_pin = tk.Button(self.title_bar, text="", font=("Segoe UI Symbol", 10),
+        self.btn_pin = tk.Button(self.title_bar, text="", font=self.font("Segoe UI Symbol", 10),
                                  command=self.toggle_always_on_top, **title_button_options)
-        self.btn_pin.pack(side=tk.RIGHT, fill=tk.Y, padx=self.px(1))
+        self.btn_pin.pack(side=tk.RIGHT, fill=tk.Y, padx=self.lpx(1))
 
         # === 新增功能按钮 (最左侧) ===
         # 字体选用 Segoe UI Symbol 或其他通用字体以更好显示特殊符号
-        btn_font = ("Segoe UI Symbol", 11)
+        btn_font = self.font("Segoe UI Symbol", 11)
         
         # 旋转屏幕 (Rotate) - 状态切换
         self.btn_rotate = tk.Button(self.title_bar, text="", font=btn_font,
                                     command=self.rotate_device, **title_button_options)
-        self.btn_rotate.pack(side=tk.LEFT, fill=tk.Y, padx=self.px(1))
+        self.btn_rotate.pack(side=tk.LEFT, fill=tk.Y, padx=self.lpx(1))
         ToolTip(self.btn_rotate, "旋转 (F6)")
 
         # 刷新屏幕 (Full Refresh)
         self.btn_refresh = tk.Button(self.title_bar, text="", font=btn_font,
                                      command=self.full_refresh, **title_button_options)
-        self.btn_refresh.pack(side=tk.LEFT, fill=tk.Y, padx=self.px(1))
+        self.btn_refresh.pack(side=tk.LEFT, fill=tk.Y, padx=self.lpx(1))
         ToolTip(self.btn_refresh, "全刷 (F5)")
 
         # 截图 (Screenshot)
         self.btn_screenshot = tk.Button(self.title_bar, text="", font=btn_font,
                                         command=self.take_screenshot, **title_button_options)
-        self.btn_screenshot.pack(side=tk.LEFT, fill=tk.Y, padx=self.px(1))
+        self.btn_screenshot.pack(side=tk.LEFT, fill=tk.Y, padx=self.lpx(1))
         ToolTip(self.btn_screenshot, "截图 (F7)")
 
         # === 2. 底部状态栏 ===
-        self.status_bar = tk.Frame(self.root, height=self.px(25))
+        self.status_bar = tk.Frame(self.root, height=self.lpx(25))
         self.status_bar.pack(fill=tk.X, side=tk.BOTTOM)
         self.status_bar.pack_propagate(False)
         
-        self.lbl_status = tk.Label(self.status_bar, text="准备就绪", font=("Segoe UI", 8))
-        self.lbl_status.pack(side=tk.LEFT, padx=self.px(10))
+        self.lbl_status = tk.Label(self.status_bar, text="准备就绪", font=self.font("Segoe UI", 8))
+        self.lbl_status.pack(side=tk.LEFT, padx=self.lpx(10))
 
         # === 3. 主内容区域 ===
         self.main_container = tk.Frame(self.root)
-        self.main_container.pack(fill=tk.BOTH, expand=True, padx=self.px(15), pady=self.px(10))
+        self.main_container.pack(fill=tk.BOTH, expand=True, padx=self.lpx(15), pady=self.lpx(10))
         
         # --- 页面A: 登录页 ---
         self.page_login = tk.Frame(self.main_container)
         
-        tk.Label(self.page_login, text="连接设备", font=("Microsoft YaHei UI", 16, "bold")).pack(
-            pady=(self.px(15), self.px(15))
+        self.lbl_login_title = tk.Label(self.page_login, text="连接设备", font=self.font("Microsoft YaHei UI", 16, "bold"))
+        self.lbl_login_title.pack(
+            pady=(self.lpx(15), self.lpx(15))
         )
         
         # IP 输入框容器
-        self.frame_ip = tk.Frame(self.page_login, padx=self.px(1), pady=self.px(1))
-        self.frame_ip_inner = tk.Frame(self.frame_ip, padx=self.px(10), pady=self.px(8))
+        self.frame_ip = tk.Frame(self.page_login, padx=self.lpx(1), pady=self.lpx(1))
+        self.frame_ip_inner = tk.Frame(self.frame_ip, padx=self.lpx(10), pady=self.lpx(8))
         
-        self.frame_ip.pack(fill=tk.X, pady=(0, self.px(15)))
+        self.frame_ip.pack(fill=tk.X, pady=(0, self.lpx(15)))
         self.frame_ip_inner.pack(fill=tk.BOTH)
         
-        tk.Label(self.frame_ip_inner, text="IP 地址:", font=("Segoe UI", 9)).pack(anchor="w")
-        self.entry_ip = tk.Entry(self.frame_ip_inner, textvariable=self.ip_var, font=("Segoe UI", 11), relief=tk.FLAT)
-        self.entry_ip.pack(fill=tk.X, pady=(self.px(2), 0))
+        self.lbl_ip = tk.Label(self.frame_ip_inner, text="IP 地址:", font=self.font("Segoe UI", 9))
+        self.lbl_ip.pack(anchor="w")
+        self.entry_ip = tk.Entry(self.frame_ip_inner, textvariable=self.ip_var, font=self.font("Segoe UI", 11), relief=tk.FLAT)
+        self.entry_ip.pack(fill=tk.X, pady=(self.lpx(2), 0))
         self.entry_ip.bind('<Return>', lambda e: self.on_connect_click())
         
         # 连接按钮
-        self.btn_connect = tk.Button(self.page_login, text="立即连接", font=("Microsoft YaHei UI", 11),
+        self.btn_connect = tk.Button(self.page_login, text="立即连接", font=self.font("Microsoft YaHei UI", 11),
                                      relief=tk.FLAT, cursor="hand2",
                                      command=self.on_connect_click)
-        self.btn_connect.pack(fill=tk.X, ipady=self.px(6))
+        self.btn_connect.pack(fill=tk.X, ipady=self.lpx(6))
 
         # --- 页面B: 控制页 ---
         self.page_control = tk.Frame(self.main_container)
         
         # 设备信息行
         self.frame_info = tk.Frame(self.page_control)
-        self.frame_info.pack(fill=tk.X, pady=(0, self.px(5)))
+        self.frame_info.pack(fill=tk.X, pady=(0, self.lpx(5)))
         
-        self.lbl_device_info = tk.Label(self.frame_info, text="已连接", font=("Microsoft YaHei UI", 9, "bold"))
+        self.lbl_device_info = tk.Label(self.frame_info, text="已连接", font=self.font("Microsoft YaHei UI", 9, "bold"))
         self.lbl_device_info.pack(side=tk.LEFT)
         
-        self.btn_disconnect = tk.Button(self.frame_info, text="断开", font=("Microsoft YaHei UI", 9),
+        self.btn_disconnect = tk.Button(self.frame_info, text="断开", font=self.font("Microsoft YaHei UI", 9),
                                         relief=tk.FLAT, cursor="hand2", bd=0,
                                         command=self.disconnect)
         self.btn_disconnect.pack(side=tk.RIGHT)
@@ -615,22 +703,22 @@ class KOReaderRemoteApp:
         self.frame_actions.rowconfigure(0, weight=1)
         
         # 上一页
-        self.btn_prev = tk.Button(self.frame_actions, text="< 上一页\n(↑)", font=("Microsoft YaHei UI", 12),
+        self.btn_prev = tk.Button(self.frame_actions, text="< 上一页\n(↑)", font=self.font("Microsoft YaHei UI", 12),
                                   relief=tk.FLAT, cursor="hand2",
                                   command=self.previous_page)
-        self.btn_prev.grid(row=0, column=0, sticky="nsew", padx=(0, self.px(4)), pady=(0, self.px(10)))
+        self.btn_prev.grid(row=0, column=0, sticky="nsew", padx=(0, self.lpx(4)), pady=(0, self.lpx(10)))
         
         # 下一页
-        self.btn_next = tk.Button(self.frame_actions, text="下一页 >\n(↓)", font=("Microsoft YaHei UI", 14, "bold"),
+        self.btn_next = tk.Button(self.frame_actions, text="下一页 >\n(↓)", font=self.font("Microsoft YaHei UI", 14, "bold"),
                                   relief=tk.FLAT, cursor="hand2",
                                   command=self.next_page)
-        self.btn_next.grid(row=0, column=1, sticky="nsew", padx=(self.px(4), 0), pady=(0, self.px(10)))
+        self.btn_next.grid(row=0, column=1, sticky="nsew", padx=(self.lpx(4), 0), pady=(0, self.lpx(10)))
         
         # 休眠按钮
-        self.btn_suspend = tk.Button(self.page_control, text="😴 设备休眠 (Esc)", font=("Microsoft YaHei UI", 10),
+        self.btn_suspend = tk.Button(self.page_control, text="😴 设备休眠 (Esc)", font=self.font("Microsoft YaHei UI", 10),
                                      relief=tk.FLAT, cursor="hand2",
                                      command=self.suspend_device)
-        self.btn_suspend.pack(fill=tk.X, ipady=self.px(8))
+        self.btn_suspend.pack(fill=tk.X, ipady=self.lpx(8))
 
         self.show_login()
 
@@ -686,10 +774,10 @@ class KOReaderRemoteApp:
         self.set_button_icon(self.btn_screenshot, "camera", icon_variant, fallback_text="📷", compound=tk.CENTER)
         
         # 4. 登录页
-        self.page_login.winfo_children()[0].configure(bg=t['window_bg'], fg=t['fg_primary'])
+        self.lbl_login_title.configure(bg=t['window_bg'], fg=t['fg_primary'])
         self.frame_ip.configure(bg=t['fg_secondary'])
         self.frame_ip_inner.configure(bg=t['input_bg'])
-        self.frame_ip_inner.winfo_children()[0].configure(bg=t['input_bg'], fg=t['fg_secondary'])
+        self.lbl_ip.configure(bg=t['input_bg'], fg=t['fg_secondary'])
         self.entry_ip.configure(bg=t['input_bg'], fg=t['input_fg'], insertbackground=t['fg_primary'])
         
         self.btn_connect.configure(bg=t['btn_primary'], fg=t['btn_primary_fg'],
@@ -821,6 +909,7 @@ class KOReaderRemoteApp:
         """窗口大小变化时保存配置"""
         # 仅在主窗口大小变化时保存
         if event.widget == self.root:
+            self.apply_responsive_layout(event.width, event.height)
             # 使用 after 防止频繁保存
             if hasattr(self, '_save_timer'):
                 self.root.after_cancel(self._save_timer)
