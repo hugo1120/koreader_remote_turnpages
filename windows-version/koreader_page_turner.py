@@ -17,6 +17,21 @@ except Exception as exc:
     pygame = None
     PYGAME_IMPORT_ERROR = exc
 
+
+def build_device_session():
+    """面向局域网设备的会话：不读系统/环境代理。
+
+    Windows 上装了 Clash 之类的代理软件时 HTTP_PROXY 会生效，
+    requests 会把 http://192.168.x.x:8080 也发给代理，导致设备明明在线却全部请求失败。
+    """
+    session = requests.Session()
+    session.trust_env = False
+    session.proxies = {}
+    return session
+
+
+DEVICE_SESSION = build_device_session()
+
 def resource_path(relative_path):
     """ Get absolute path to resource, works for dev and for PyInstaller """
     try:
@@ -376,11 +391,9 @@ IP_INPUT_MODE_FULL = "full"
 IP_INPUT_MODE_SCAN = "scan"
 SCAN_HOST_MIN = 1
 SCAN_HOST_MAX = 254
-SCAN_WORKERS = 64
-SCAN_CONNECT_TIMEOUT = 0.35
-SCAN_HTTP_TIMEOUT = 2.5
-SCAN_PROGRESS_STEP = 8
-SCAN_MAX_HTTP_CANDIDATES = 16
+SCAN_HTTP_WORKERS = 64
+SCAN_HTTP_TIMEOUT = 1.5
+SCAN_PROGRESS_STEP = 16
 
 
 def parse_ip_input(raw_text):
@@ -389,7 +402,9 @@ def parse_ip_input(raw_text):
     返回 (mode, value)：
     - ("full", "192.168.2.15") 直接连接完整 IP
     - ("scan", "192.168.2")    只给了前三段，需要在网段内自动搜索
-    无法解析时返回 None。支持 "192.168.2" / "192.168.2." / "192.168.2.x" / "192.168.2.*"。
+    - ("scan", "10.68")        只给了前两段，由本机网卡地址补全第三段后再搜索
+    无法解析时返回 None。
+    支持 "192.168.2" / "192.168.2." / "192.168.2.x" / "192.168.2.*" / "10.68"。
     """
     text = str(raw_text or "").strip()
     if not text:
@@ -399,40 +414,71 @@ def parse_ip_input(raw_text):
     text = text.split("/", 1)[0].strip()
 
     parts = [part.strip() for part in text.split(".")]
-    while len(parts) > 1 and parts[-1] == "":
+    while len(parts) > 1 and parts[-1] in ("", "x", "X", "*"):
         parts.pop()
 
-    if len(parts) == 4 and parts[-1].lower() in ("x", "*"):
-        parts = parts[:3]
-
-    if len(parts) not in (3, 4):
+    if len(parts) not in (2, 3, 4):
         return None
     if not all(part.isdigit() and 0 <= int(part) <= 255 for part in parts):
         return None
 
     normalized = [str(int(part)) for part in parts]
-    if len(normalized) == 3 or int(normalized[3]) == 0:
+    if len(normalized) in (2, 3) or int(normalized[3]) == 0:
         return IP_INPUT_MODE_SCAN, ".".join(normalized[:3])
     return IP_INPUT_MODE_FULL, ".".join(normalized)
 
 
-def probe_tcp_port(ip, port, timeout=SCAN_CONNECT_TIMEOUT):
-    """快速试探端口是否可连，用于网段扫描的第一层过滤。"""
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.settimeout(timeout)
-    try:
-        return sock.connect_ex((ip, port)) == 0
-    except OSError:
-        return False
-    finally:
-        try:
-            sock.close()
-        except OSError:
-            pass
-
-
 def iter_subnet_hosts(prefix):
     return [f"{prefix}.{host}" for host in range(SCAN_HOST_MIN, SCAN_HOST_MAX + 1)]
+
+
+def local_ipv4_addresses():
+    """取本机全部 IPv4 地址，用于把 10.68 这种两段输入补全成真正的 /24。"""
+    found = []
+    try:
+        probe = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        try:
+            probe.connect(("8.8.8.8", 80))
+            found.append(probe.getsockname()[0])
+        finally:
+            probe.close()
+    except OSError:
+        pass
+    try:
+        for info in socket.getaddrinfo(socket.gethostname(), None, socket.AF_INET):
+            found.append(info[4][0])
+    except OSError:
+        pass
+
+    unique = []
+    for ip in found:
+        if ip and ip != "127.0.0.1" and ip not in unique:
+            unique.append(ip)
+    return unique
+
+
+def expand_scan_prefixes(value, local_ips=None):
+    """把输入展开成要扫描的 /24 前缀列表。
+
+    三段输入直接使用；两段输入结合本机地址补全第三段，
+    比如本机 10.68.3.7 + 输入 10.68 -> ["10.68.3"]。
+    """
+    text = str(value or "").strip()
+    parts = [part for part in text.split(".") if part]
+    if len(parts) == 3:
+        return [".".join(parts)]
+    if len(parts) != 2:
+        return []
+
+    head = ".".join(parts) + "."
+    ips = local_ipv4_addresses() if local_ips is None else list(local_ips)
+    prefixes = []
+    for ip in ips:
+        if ip.startswith(head):
+            prefix = ip.rsplit(".", 1)[0]
+            if prefix not in prefixes:
+                prefixes.append(prefix)
+    return prefixes
 
 
 class ToolTip:
@@ -737,7 +783,7 @@ class KOReaderRemoteApp:
         
         self.lbl_ip = tk.Label(self.frame_ip_inner, text="IP 地址 / 网段:", font=self.font("Segoe UI", 9))
         self.lbl_ip.pack(anchor="w")
-        ToolTip(self.lbl_ip, "填完整 IP（192.168.2.15）直接连接；\n只填前三段（192.168.2）会自动搜索整个网段。")
+        ToolTip(self.lbl_ip, "填完整 IP（192.168.2.15）直接连接；\n只填前三段（192.168.2）会自动搜索整个网段；\n只填前两段（10.68）会按本机网卡补全第三段再搜。")
         self.entry_ip = tk.Entry(self.frame_ip_inner, textvariable=self.ip_var, font=self.font("Segoe UI", 11), relief=tk.FLAT)
         self.entry_ip.pack(fill=tk.X, pady=(self.lpx(2), 0))
         self.entry_ip.bind('<Return>', lambda e: self.on_connect_click())
@@ -1000,12 +1046,22 @@ class KOReaderRemoteApp:
         if parsed is None:
             messagebox.showwarning(
                 "格式错误",
-                "IP 格式不正确。\n\n完整 IP：192.168.2.15\n只填前三段：192.168.2（自动搜索）\n也支持 192.168.2.x / 192.168.2.*"
+                "IP 格式不正确。\n\n完整 IP：192.168.2.15\n"
+                "只填前三段：192.168.2（自动搜索）\n"
+                "只填前两段：10.68（按本机网卡补全后搜索）\n"
+                "也支持 192.168.2.x / 192.168.2.*"
             )
             return
 
         mode, value = parsed
         is_scan = mode == IP_INPUT_MODE_SCAN
+        if is_scan and not expand_scan_prefixes(value):
+            messagebox.showwarning(
+                "无法确定网段",
+                f"输入的 {value} 只有两段，但本机没有同网段的网卡地址，\n"
+                "无法补全第三段。请填完整的三段，例如 10.68.0。"
+            )
+            return
         self.set_connect_busy(True, "搜索中..." if is_scan else "连接中...")
         threading.Thread(target=self.thread_connect, args=(mode, value), daemon=True).start()
 
@@ -1029,51 +1085,51 @@ class KOReaderRemoteApp:
     def probe_device(self, ip, timeout=SCAN_HTTP_TIMEOUT):
         """向设备发一次无副作用的探活请求（GotoViewRel/0 不改变当前页）。"""
         try:
-            resp = requests.get(f"http://{ip}:8080/koreader/event/GotoViewRel/0", timeout=timeout)
+            resp = DEVICE_SESSION.get(
+                f"http://{ip}:8080/koreader/event/GotoViewRel/0", timeout=timeout
+            )
             return resp.status_code == 200
         except Exception:
             return False
 
-    def scan_subnet(self, prefix):
-        """并发扫描 prefix.1-254 的 8080 端口，再逐个用 HTTP 确认，返回首个可用 IP。"""
-        hosts = iter_subnet_hosts(prefix)
+    def scan_subnet(self, value):
+        """并发验证网段内每个地址的 8080 HTTP 接口，返回首个可用 IP。
+
+        value 可以是三段前缀（192.168.2），也可以是两段（10.68），
+        后者会结合本机网卡地址补全成真正的 /24 再扫。
+
+        这里不做 TCP 预筛：装了代理/TUN 的机器上任意地址都能连上 8080，
+        预筛反而会把真设备挤出候选，所以每个地址都实际发一次 HTTP 请求。
+        """
+        prefixes = expand_scan_prefixes(value)
+        if not prefixes:
+            return None
+
+        hosts = [ip for prefix in prefixes for ip in iter_subnet_hosts(prefix)]
         total = len(hosts)
-        hits = []
+        scope = "、".join(f"{prefix}.{SCAN_HOST_MIN}-{SCAN_HOST_MAX}" for prefix in prefixes)
 
-        self.root.after(0, lambda: self.show_log(
-            f"搜索 {prefix}.{SCAN_HOST_MIN}-{SCAN_HOST_MAX} ..."
-        ))
+        self.root.after(0, lambda: self.show_log(f"搜索 {scope} ..."))
 
-        with ThreadPoolExecutor(max_workers=SCAN_WORKERS) as pool:
-            ip_by_future = {
-                pool.submit(probe_tcp_port, ip, 8080): ip
-                for ip in hosts
-            }
-            for done, future in enumerate(as_completed(ip_by_future), start=1):
+        found = []
+        with ThreadPoolExecutor(max_workers=SCAN_HTTP_WORKERS) as pool:
+            futures = {pool.submit(self.probe_device, ip): ip for ip in hosts}
+            for done, future in enumerate(as_completed(futures), start=1):
+                ip = futures[future]
                 try:
                     if future.result():
-                        hits.append(ip_by_future[future])
+                        found.append(ip)
                 except Exception:
                     pass
                 if done % SCAN_PROGRESS_STEP == 0 or done == total:
-                    self.root.after(0, lambda d=done, t=total, p=prefix: self.show_log(
-                        f"搜索 {p}.x  {d}/{t}"
+                    self.root.after(0, lambda d=done, t=total, n=len(found): self.show_log(
+                        f"搜索 {d}/{t}  命中 {n}"
                     ))
 
-        hits.sort(key=lambda ip: int(ip.rsplit(".", 1)[-1]))
-        if not hits:
+        if not found:
             return None
-
-        # 端口开放不等于 KOReader，逐个用 HTTP 确认；候选过多时只验前若干个，避免长时间等待
-        candidates = hits[:SCAN_MAX_HTTP_CANDIDATES]
-        if len(hits) > len(candidates):
-            self.root.after(0, lambda: self.show_log(f"候选过多，仅验证前 {len(candidates)} 个"))
-        with ThreadPoolExecutor(max_workers=min(8, len(candidates))) as pool:
-            confirmed = list(pool.map(self.probe_device, candidates))
-        for ip, ok in zip(candidates, confirmed):
-            if ok:
-                return ip
-        return None
+        found.sort(key=lambda ip: tuple(int(part) for part in ip.split(".")))
+        return found[0]
 
     def offer_scan(self, ip, prefix):
         answer = messagebox.askyesno(
@@ -1103,9 +1159,11 @@ class KOReaderRemoteApp:
     def handle_scan_fail(self, prefix):
         self.set_connect_busy(False)
         self.show_log("未找到设备", True)
+        prefixes = expand_scan_prefixes(prefix)
+        scope = "、".join(f"{item}.{SCAN_HOST_MIN}-{SCAN_HOST_MAX}" for item in prefixes) or prefix
         messagebox.showerror(
             "未找到设备",
-            f"在 {prefix}.{SCAN_HOST_MIN}-{SCAN_HOST_MAX} 中没有搜索到 KOReader。\n\n"
+            f"在 {scope} 中没有搜索到 KOReader。\n\n"
             "请确认设备已连上同一个 Wi-Fi，并在 KOReader 中开启 HTTP Server。"
         )
 
@@ -1148,7 +1206,7 @@ class KOReaderRemoteApp:
             return
         def _req():
             try:
-                resp = requests.get(build_koreader_url(self.base_url, endpoint), timeout=2)
+                resp = DEVICE_SESSION.get(build_koreader_url(self.base_url, endpoint), timeout=2)
                 ensure_success_status(resp)
                 self.root.after(0, lambda: self.show_log(log_text))
             except:
