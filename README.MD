@@ -9,7 +9,7 @@ KOReader 局域网遥控工具，当前只保留两个清晰入口：
 
 到 [Releases](https://github.com/hugo1120/koreader_remote_turnpages/releases/latest) 页面下载：
 
-- `KOReader.Page.Turner.exe`：Windows 免安装单文件版，双击即可运行
+- `KOReader.Page.Turner.zip`：解压后得到 `KOReader Page Turner.exe`，Windows 免安装单文件版，双击即可运行
 - `koreader-remote.apk`：Android 版 APK（v1.2.0 起提供）
 
 ## Windows 版
@@ -17,7 +17,7 @@ KOReader 局域网遥控工具，当前只保留两个清晰入口：
 启动方式，任选一种：
 
 - 双击 `windows-version/run.bat`：自动挑选带 tkinter 的 Python，缺 `requests` 时自动安装
-- 双击下载的 `KOReader.Page.Turner.exe`：免安装，无需 Python 环境
+- 解压下载的 `KOReader.Page.Turner.zip`，双击里面的 `KOReader Page Turner.exe`：免安装，无需 Python 环境
 
 源码运行：
 
