@@ -25,6 +25,7 @@ Set-Location "D:/github/koreader_remote_turnpages/windows-version"
 python -m unittest "tests/test_http_helpers.py"
 python -m unittest "tests/test_keyboard_mapping.py"
 python -m unittest "tests/test_ui_scaling_and_icons.py"
+python -m unittest "tests/test_ip_scanning.py"
 python -m py_compile "koreader_page_turner.py"
 python -m PyInstaller --noconsole --onefile --clean --name "KOReader Page Turner" --icon "logo.ico" --add-data "logo.ico;." --add-data "logo.png;." --add-data "assets;assets" "koreader_page_turner.py"
 ```

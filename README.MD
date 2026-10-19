@@ -5,7 +5,21 @@ KOReader 局域网遥控工具，当前只保留两个清晰入口：
 - `windows-version/`：Windows 桌面版，Tkinter + requests，可选 pygame 手柄支持。
 - `android-version/`：Android 原生版，Kotlin + Jetpack Compose，通过 GitHub Actions 生成 APK。
 
+## 下载
+
+到 [Releases](https://github.com/hugo1120/koreader_remote_turnpages/releases/latest) 页面下载：
+
+- `KOReader.Page.Turner.exe`：Windows 免安装单文件版，双击即可运行
+- `koreader-remote.apk`：Android 版 APK（v1.2.0 起提供）
+
 ## Windows 版
+
+启动方式，任选一种：
+
+- 双击 `windows-version/run.bat`：自动挑选带 tkinter 的 Python，缺 `requests` 时自动安装
+- 双击下载的 `KOReader.Page.Turner.exe`：免安装，无需 Python 环境
+
+源码运行：
 
 ```powershell
 Set-Location "D:/github/koreader_remote_turnpages/windows-version"
@@ -27,6 +41,13 @@ python "koreader_page_turner.py"
 快捷键可在 `koreader_config.json` 的 `keyboard_mapping` 中自定义。源码运行时该文件在 `windows-version/`；运行打包 EXE 时该文件在 EXE 同目录。
 
 Windows 版普通控制命令会检查 KOReader HTTP 响应状态；未连接时设备动作会在状态栏提示。顶部旋转、全刷、截图按钮支持悬停提示，交互按钮使用随主题切换的 PNG 图标。窗口大小按 Windows DPI 逻辑尺寸保存，窗口缩小时标题栏、图标、字体、间距和控制按钮会同步进入紧凑布局。
+
+连接设备时 IP 输入框支持两种写法：
+
+- 完整地址 `192.168.2.15`：直接连接
+- 只填前三段 `192.168.2`：自动扫描 `192.168.2.1-254` 找到设备，Wi-Fi 重连后 IP 变了也不用再手改最后一个数字
+
+也接受 `192.168.2.`、`192.168.2.x`、`192.168.2.*`、`192.168.2.0`。填完整 IP 但连不上时，程序会询问是否改为搜索整个网段。输入框会保留你填的原始内容，所以填网段后下次打开直接按回车即可重新搜索。
 
 打包 EXE：
 

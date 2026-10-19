@@ -1,8 +1,10 @@
 import json
 import os
+import socket
 import sys
 import threading
 import tkinter as tk
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from ctypes import byref, c_int, sizeof, windll
 from datetime import datetime
 from tkinter import messagebox
@@ -370,6 +372,69 @@ def ensure_success_status(response):
     return response
 
 
+IP_INPUT_MODE_FULL = "full"
+IP_INPUT_MODE_SCAN = "scan"
+SCAN_HOST_MIN = 1
+SCAN_HOST_MAX = 254
+SCAN_WORKERS = 64
+SCAN_CONNECT_TIMEOUT = 0.35
+SCAN_HTTP_TIMEOUT = 2.5
+SCAN_PROGRESS_STEP = 8
+SCAN_MAX_HTTP_CANDIDATES = 16
+
+
+def parse_ip_input(raw_text):
+    """解析输入的 IP。
+
+    返回 (mode, value)：
+    - ("full", "192.168.2.15") 直接连接完整 IP
+    - ("scan", "192.168.2")    只给了前三段，需要在网段内自动搜索
+    无法解析时返回 None。支持 "192.168.2" / "192.168.2." / "192.168.2.x" / "192.168.2.*"。
+    """
+    text = str(raw_text or "").strip()
+    if not text:
+        return None
+    if "://" in text:
+        text = text.split("://", 1)[1]
+    text = text.split("/", 1)[0].strip()
+
+    parts = [part.strip() for part in text.split(".")]
+    while len(parts) > 1 and parts[-1] == "":
+        parts.pop()
+
+    if len(parts) == 4 and parts[-1].lower() in ("x", "*"):
+        parts = parts[:3]
+
+    if len(parts) not in (3, 4):
+        return None
+    if not all(part.isdigit() and 0 <= int(part) <= 255 for part in parts):
+        return None
+
+    normalized = [str(int(part)) for part in parts]
+    if len(normalized) == 3 or int(normalized[3]) == 0:
+        return IP_INPUT_MODE_SCAN, ".".join(normalized[:3])
+    return IP_INPUT_MODE_FULL, ".".join(normalized)
+
+
+def probe_tcp_port(ip, port, timeout=SCAN_CONNECT_TIMEOUT):
+    """快速试探端口是否可连，用于网段扫描的第一层过滤。"""
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.settimeout(timeout)
+    try:
+        return sock.connect_ex((ip, port)) == 0
+    except OSError:
+        return False
+    finally:
+        try:
+            sock.close()
+        except OSError:
+            pass
+
+
+def iter_subnet_hosts(prefix):
+    return [f"{prefix}.{host}" for host in range(SCAN_HOST_MIN, SCAN_HOST_MAX + 1)]
+
+
 class ToolTip:
     def __init__(self, widget, text):
         self.widget = widget
@@ -413,7 +478,9 @@ class KOReaderRemoteApp:
         apply_native_window_icon(self.root)
         # 核心变量
         self.connected = False
+        self.busy = False
         self.base_url = ""
+        self.device_ip = ""
         self.ip_var = tk.StringVar()
         self.current_theme = "light"
         self.always_on_top = False  # 置顶状态
@@ -668,8 +735,9 @@ class KOReaderRemoteApp:
         self.frame_ip.pack(fill=tk.X, pady=(0, self.lpx(15)))
         self.frame_ip_inner.pack(fill=tk.BOTH)
         
-        self.lbl_ip = tk.Label(self.frame_ip_inner, text="IP 地址:", font=self.font("Segoe UI", 9))
+        self.lbl_ip = tk.Label(self.frame_ip_inner, text="IP 地址 / 网段:", font=self.font("Segoe UI", 9))
         self.lbl_ip.pack(anchor="w")
+        ToolTip(self.lbl_ip, "填完整 IP（192.168.2.15）直接连接；\n只填前三段（192.168.2）会自动搜索整个网段。")
         self.entry_ip = tk.Entry(self.frame_ip_inner, textvariable=self.ip_var, font=self.font("Segoe UI", 11), relief=tk.FLAT)
         self.entry_ip.pack(fill=tk.X, pady=(self.lpx(2), 0))
         self.entry_ip.bind('<Return>', lambda e: self.on_connect_click())
@@ -915,35 +983,131 @@ class KOReaderRemoteApp:
                 self.root.after_cancel(self._save_timer)
             self._save_timer = self.root.after(500, self.save_config)
 
+    def set_connect_busy(self, busy, text="立即连接"):
+        self.busy = busy
+        self.btn_connect.config(state=tk.DISABLED if busy else tk.NORMAL, text=text)
+
     def on_connect_click(self):
-        ip = self.ip_var.get().strip()
-        if not ip:
-            messagebox.showwarning("提示", "请输入 IP 地址")
+        if self.busy:
             return
-        self.btn_connect.config(state=tk.DISABLED, text="连接中...")
-        self.base_url = f"http://{ip}:8080"
-        threading.Thread(target=self.thread_check_connection, daemon=True).start()
 
-    def thread_check_connection(self):
-        try:
-            resp = requests.get(f"{self.base_url}/koreader/event/GotoViewRel/0", timeout=3)
-            if resp.status_code == 200:
-                self.root.after(0, self.handle_connect_success)
+        raw = self.ip_var.get().strip()
+        if not raw:
+            messagebox.showwarning("提示", "请输入 IP 地址或网段，例如 192.168.2.15 / 192.168.2")
+            return
+
+        parsed = parse_ip_input(raw)
+        if parsed is None:
+            messagebox.showwarning(
+                "格式错误",
+                "IP 格式不正确。\n\n完整 IP：192.168.2.15\n只填前三段：192.168.2（自动搜索）\n也支持 192.168.2.x / 192.168.2.*"
+            )
+            return
+
+        mode, value = parsed
+        is_scan = mode == IP_INPUT_MODE_SCAN
+        self.set_connect_busy(True, "搜索中..." if is_scan else "连接中...")
+        threading.Thread(target=self.thread_connect, args=(mode, value), daemon=True).start()
+
+    def thread_connect(self, mode, value):
+        """工作线程：完整 IP 直连，网段则先扫描再连接。"""
+        if mode == IP_INPUT_MODE_SCAN:
+            found_ip = self.scan_subnet(value)
+            if found_ip:
+                self.root.after(0, lambda: self.handle_connect_success(found_ip))
             else:
-                raise Exception("Error")
-        except:
-            self.root.after(0, lambda: self.handle_connect_fail(None))
+                self.root.after(0, lambda: self.handle_scan_fail(value))
+            return
 
-    def handle_connect_success(self):
+        if self.probe_device(value):
+            self.root.after(0, lambda: self.handle_connect_success(value))
+            return
+
+        prefix = value.rsplit(".", 1)[0]
+        self.root.after(0, lambda: self.offer_scan(value, prefix))
+
+    def probe_device(self, ip, timeout=SCAN_HTTP_TIMEOUT):
+        """向设备发一次无副作用的探活请求（GotoViewRel/0 不改变当前页）。"""
+        try:
+            resp = requests.get(f"http://{ip}:8080/koreader/event/GotoViewRel/0", timeout=timeout)
+            return resp.status_code == 200
+        except Exception:
+            return False
+
+    def scan_subnet(self, prefix):
+        """并发扫描 prefix.1-254 的 8080 端口，再逐个用 HTTP 确认，返回首个可用 IP。"""
+        hosts = iter_subnet_hosts(prefix)
+        total = len(hosts)
+        hits = []
+
+        self.root.after(0, lambda: self.show_log(
+            f"搜索 {prefix}.{SCAN_HOST_MIN}-{SCAN_HOST_MAX} ..."
+        ))
+
+        with ThreadPoolExecutor(max_workers=SCAN_WORKERS) as pool:
+            ip_by_future = {
+                pool.submit(probe_tcp_port, ip, 8080): ip
+                for ip in hosts
+            }
+            for done, future in enumerate(as_completed(ip_by_future), start=1):
+                try:
+                    if future.result():
+                        hits.append(ip_by_future[future])
+                except Exception:
+                    pass
+                if done % SCAN_PROGRESS_STEP == 0 or done == total:
+                    self.root.after(0, lambda d=done, t=total, p=prefix: self.show_log(
+                        f"搜索 {p}.x  {d}/{t}"
+                    ))
+
+        hits.sort(key=lambda ip: int(ip.rsplit(".", 1)[-1]))
+        if not hits:
+            return None
+
+        # 端口开放不等于 KOReader，逐个用 HTTP 确认；候选过多时只验前若干个，避免长时间等待
+        candidates = hits[:SCAN_MAX_HTTP_CANDIDATES]
+        if len(hits) > len(candidates):
+            self.root.after(0, lambda: self.show_log(f"候选过多，仅验证前 {len(candidates)} 个"))
+        with ThreadPoolExecutor(max_workers=min(8, len(candidates))) as pool:
+            confirmed = list(pool.map(self.probe_device, candidates))
+        for ip, ok in zip(candidates, confirmed):
+            if ok:
+                return ip
+        return None
+
+    def offer_scan(self, ip, prefix):
+        answer = messagebox.askyesno(
+            "连接失败",
+            f"无法连接 {ip}。\n\n是否在网段 {prefix}.{SCAN_HOST_MIN}-{SCAN_HOST_MAX} 中自动搜索设备？"
+        )
+        if not answer:
+            self.set_connect_busy(False)
+            self.show_log("已取消连接", True)
+            return
+        self.btn_connect.config(text="搜索中...")
+        threading.Thread(
+            target=self.thread_connect,
+            args=(IP_INPUT_MODE_SCAN, prefix),
+            daemon=True
+        ).start()
+
+    def handle_connect_success(self, ip):
         self.connected = True
+        self.device_ip = ip
+        self.base_url = f"http://{ip}:8080"
+        self.set_connect_busy(False)
         self.save_config()
-        self.btn_connect.config(state=tk.NORMAL, text="立即连接")
         self.show_control()
-        self.show_log("连接成功")
+        self.show_log(f"已连接 {ip}")
 
-    def handle_connect_fail(self, _):
-        self.btn_connect.config(state=tk.NORMAL, text="立即连接")
-        messagebox.showerror("连接失败", "无法连接。请检查IP或确认HTTP Server已开启。")
+    def handle_scan_fail(self, prefix):
+        self.set_connect_busy(False)
+        self.show_log("未找到设备", True)
+        messagebox.showerror(
+            "未找到设备",
+            f"在 {prefix}.{SCAN_HOST_MIN}-{SCAN_HOST_MAX} 中没有搜索到 KOReader。\n\n"
+            "请确认设备已连上同一个 Wi-Fi，并在 KOReader 中开启 HTTP Server。"
+        )
 
     def focus_control_page(self):
         try:
@@ -964,12 +1128,13 @@ class KOReaderRemoteApp:
         self.entry_ip.configure(state=tk.DISABLED)
         self.page_login.pack_forget()
         self.page_control.pack(fill=tk.BOTH, expand=True)
-        self.lbl_device_info.config(text=f"已连接: {self.ip_var.get()}")
+        self.lbl_device_info.config(text=f"已连接: {self.device_ip or self.ip_var.get()}")
         self.focus_control_page()
         self.root.after_idle(self.focus_control_page)
 
     def disconnect(self):
         self.connected = False
+        self.device_ip = ""
         self.show_login()
 
     def ensure_connected(self):

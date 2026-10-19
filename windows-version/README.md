@@ -5,6 +5,7 @@ Windows 桌面版 KOReader 局域网遥控器，基于 Tkinter + requests 开发
 ## 功能
 
 - 上一页 / 下一页
+- 支持只填 IP 前三段（如 `192.168.2`），自动搜索网段内的设备，Wi-Fi 重连换 IP 后不用手改
 - 键盘快捷键：翻页、旋转、全刷、截图、休眠
 - 鼠标滚轮翻页
 - 旋转、全刷、截图、休眠
@@ -61,6 +62,23 @@ Windows 桌面版 KOReader 局域网遥控器，基于 Tkinter + requests 开发
 
 窗口大小会同时保存旧的像素字段 `window_width` / `window_height` 和新的逻辑尺寸字段 `window_width_dp` / `window_height_dp`。跨不同 Windows 缩放倍率使用时，程序优先读取逻辑尺寸字段。布局比例不会单独写入 JSON；程序会根据已保存的窗口大小和当前 DPI 自动计算紧凑程度。
 
+## 连接设备
+
+IP 输入框支持两种写法：
+
+| 输入 | 行为 |
+| --- | --- |
+| `192.168.2.15` | 直接连接这个 IP |
+| `192.168.2` / `192.168.2.` / `192.168.2.x` / `192.168.2.*` / `192.168.2.0` | 当成网段，自动搜索 `192.168.2.1-254` 找设备 |
+
+自动搜索的过程：
+
+1. 并发探测 254 个地址的 `8080` 端口（TCP 连通性过滤，通常 1 秒内返回）。
+2. 对端口开放的候选地址再发一次 `/koreader/event/GotoViewRel/0` 确认是 KOReader，该请求不会翻页。
+3. 找到后自动连接，并把实际 IP 显示在控制页；状态栏实时显示搜索进度。
+
+填完整 IP 但连不上时，程序会询问是否改为搜索整个网段。输入框保留的是你填的原始内容（网段形式就存网段），所以下次打开直接回车即可重新搜索。
+
 ## 运行
 
 1. 在 KOReader 中开启 HTTP 服务：`Network -> SSH/HTTP Server`
@@ -74,6 +92,16 @@ python -m pip install pygame
 `pygame` 是可选依赖，缺失时只会禁用手柄功能。
 
 3. 启动桌面版：
+
+直接双击 `run.bat`，或在命令行执行：
+
+```powershell
+./run.bat
+```
+
+`run.bat` 会自动挑一个带 tkinter 的 Python（PATH 里的 `python` 可能缺 tcl/tk 组件），缺 `requests` 时自动安装，`pygame` 缺失只提示不阻塞。想改启动行为就改脚本顶部的配置块：`CONSOLE=1` 保留控制台窗口，改成 `0` 用 `pythonw` 静默启动。
+
+也可以手动运行：
 
 ```powershell
 python "koreader_page_turner.py"
@@ -97,6 +125,7 @@ dist/KOReader Page Turner.exe
 python -m unittest "tests/test_http_helpers.py"
 python -m unittest "tests/test_keyboard_mapping.py"
 python -m unittest "tests/test_ui_scaling_and_icons.py"
+python -m unittest "tests/test_ip_scanning.py"
 python -m py_compile "koreader_page_turner.py"
 ```
 
@@ -105,6 +134,8 @@ python -m py_compile "koreader_page_turner.py"
 ## 文件说明
 
 - `koreader_page_turner.py`：桌面版应用入口
+- `run.bat`：源码运行脚本，自动挑选带 tkinter 的 Python 并补齐依赖
+- `tests/test_ip_scanning.py`：IP 输入解析与网段自动搜索的单元测试（扫描部分已 mock，不依赖真实设备）
 - `build_exe.bat`：Windows EXE 打包脚本
 - `logo.ico` / `logo.png`：窗口和打包图标
 - `assets/icons/`：按钮 PNG 图标资源，打包时通过 `--add-data "assets;assets"` 写入 EXE

@@ -39,6 +39,9 @@ captures/
 *.jks
 *.keystore
 
+# IDE / tool data
+.workbuddy/
+
 # IDEs / Editor
 .vscode/
 .idea/
